@@ -108,6 +108,19 @@
   #reader { width:100%; border-radius:14px; overflow:hidden; background:#000; min-height:10px; }
   .kcal-preview { font-size:28px; font-weight:700; text-align:center; margin:14px 0 4px; }
   svg.chart text { fill:var(--muted); font-size:11px; }
+  details.hist summary, details.mday summary { list-style:none; cursor:pointer; }
+  details.hist summary::-webkit-details-marker, details.mday summary::-webkit-details-marker { display:none; }
+  .hist-main { display:flex; justify-content:space-between; align-items:center; font-size:17px; font-weight:700;
+    padding:14px 16px; border-radius:14px; background:var(--body-soft); color:var(--body); }
+  .hist-main::after, .mday-btn::after { content:'›'; font-size:22px; transition:transform .2s; }
+  details[open] > .hist-main::after, details[open] > .mday-btn::after { transform:rotate(90deg); }
+  .mday { margin-bottom:8px; }
+  .mday-btn { display:flex; justify-content:space-between; align-items:center; padding:13px 16px; border-radius:12px;
+    border:1px solid var(--line); background:var(--bg); font-weight:600; font-size:16px; }
+  .mday-body { padding:6px 4px 4px; }
+  .mrow { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:15px; }
+  .mrow:last-of-type { border-bottom:0; }
+  .mrow span:first-child { color:var(--muted); }
 </style>
 </head>
 <body>
@@ -160,12 +173,12 @@
   <div class="card">
     <h2>Definições</h2>
     <div class="grid2">
-      <div><label for="gWater">Água (ml/dia)</label><input type="number" id="gWater" inputmode="numeric"></div>
-      <div><label for="gKcal">Calorias (kcal/dia)</label><input type="number" id="gKcal" inputmode="numeric"></div>
-      <div><label for="gSteps">Passos (por dia)</label><input type="number" id="gSteps" inputmode="numeric"></div>
-      <div><label for="gP">Proteína (g/dia)</label><input type="number" id="gP" inputmode="numeric"></div>
-      <div><label for="gC">Hidratos (g/dia)</label><input type="number" id="gC" inputmode="numeric"></div>
-      <div><label for="gF">Gordura (g/dia)</label><input type="number" id="gF" inputmode="numeric"></div>
+      <div><label for="gWater">Água (ml/dia)</label><input type="text" id="gWater" inputmode="numeric"></div>
+      <div><label for="gKcal">Calorias (kcal/dia)</label><input type="text" id="gKcal" inputmode="numeric"></div>
+      <div><label for="gSteps">Passos (por dia)</label><input type="text" id="gSteps" inputmode="numeric"></div>
+      <div><label for="gP">Proteína (g/dia)</label><input type="text" id="gP" inputmode="numeric"></div>
+      <div><label for="gC">Hidratos (g/dia)</label><input type="text" id="gC" inputmode="numeric"></div>
+      <div><label for="gF">Gordura (g/dia)</label><input type="text" id="gF" inputmode="numeric"></div>
     </div>
     <label style="display:flex;align-items:center;gap:10px;margin-top:14px;color:var(--text)">
       <input type="checkbox" id="gCountEx" style="width:22px;height:22px;flex:0 0 22px"> Somar as calorias do exercício ao objetivo do dia</label>
@@ -209,8 +222,8 @@
     <label for="exName">Exercício</label><input id="exName" placeholder="Ex.: Ginásio – pernas" list="exNames">
     <datalist id="exNames"></datalist>
     <div class="grid2">
-      <div><label for="exMin">Minutos</label><input id="exMin" type="number" inputmode="numeric"></div>
-      <div><label for="exKcal">Calorias gastas</label><input id="exKcal" type="number" inputmode="numeric"></div>
+      <div><label for="exMin">Minutos</label><input id="exMin" type="text" inputmode="numeric"></div>
+      <div><label for="exKcal">Calorias gastas</label><input id="exKcal" type="text" inputmode="numeric"></div>
     </div>
     <div class="row"><button class="steps" id="exAdd">+ Adicionar exercício</button></div>
     <p class="note">As calorias gastas vêm do relógio, do Strava ou da máquina do ginásio. Se usares o Atalho, as calorias ativas da app Saúde entram sozinhas: nesse caso não repitas aqui as caminhadas do Strava, para não contar a dobrar.</p>
@@ -232,16 +245,16 @@
     <h2>Nova medição</h2>
     <label for="mDate">Data</label><input type="date" id="mDate">
     <div class="grid2">
-<div><label for="mWeight">Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" id="mWeight"></div>
-      <div><label for="mFat">Gordura (%)</label><input type="number" step="0.1" inputmode="decimal" id="mFat"></div>
-      <div><label for="mBasal">Basal (kcal)</label><input type="number" step="0.1" inputmode="decimal" id="mBasal"></div>
-      <div><label for="mVisceral">Visceral (nível)</label><input type="number" step="0.1" inputmode="decimal" id="mVisceral"></div>
-      <div><label for="mWaist">Cintura (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mWaist"></div>
-      <div><label for="mAbdomen">Abdómen (umbigo) (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mAbdomen"></div>
-      <div><label for="mHip">Anca (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mHip"></div>
-      <div><label for="mThigh">Coxa (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mThigh"></div>
-      <div><label for="mArm">Braço (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mArm"></div>
-      <div><label for="mChest">Peito (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mChest"></div>
+<div><label for="mWeight">Peso (kg)</label><input type="text" inputmode="decimal" id="mWeight"></div>
+      <div><label for="mFat">Gordura (%)</label><input type="text" inputmode="decimal" id="mFat"></div>
+      <div><label for="mBasal">Basal (kcal)</label><input type="text" inputmode="decimal" id="mBasal"></div>
+      <div><label for="mVisceral">Visceral (nível)</label><input type="text" inputmode="decimal" id="mVisceral"></div>
+      <div><label for="mWaist">Cintura (cm)</label><input type="text" inputmode="decimal" id="mWaist"></div>
+      <div><label for="mAbdomen">Abdómen (umbigo) (cm)</label><input type="text" inputmode="decimal" id="mAbdomen"></div>
+      <div><label for="mHip">Anca (cm)</label><input type="text" inputmode="decimal" id="mHip"></div>
+      <div><label for="mThigh">Coxa (cm)</label><input type="text" inputmode="decimal" id="mThigh"></div>
+      <div><label for="mArm">Braço (cm)</label><input type="text" inputmode="decimal" id="mArm"></div>
+      <div><label for="mChest">Peito (cm)</label><input type="text" inputmode="decimal" id="mChest"></div>
     </div>
     <div class="row"><button class="body" id="mSave">Guardar medição</button></div>
   </div>
@@ -250,8 +263,10 @@
     <div id="mChart"></div>
   </div>
   <div class="card">
-    <h2>Histórico</h2>
-    <ul class="list" id="mList"></ul>
+    <details class="hist" id="histBox">
+      <summary class="hist-main">Histórico <span class="muted" id="histCount"></span></summary>
+      <div id="mList" style="margin-top:12px"></div>
+    </details>
   </div>
 </section>
 
@@ -286,7 +301,7 @@
 <div class="sheet" id="rSheet">
   <div class="sheet-top"><h2 id="rTitle">Receita</h2><button class="x" id="rClose">✕</button></div>
   <label for="rName">Nome</label><input id="rName" placeholder="Ex.: Panquecas de aveia">
-  <label for="rPortions">Número de doses</label><input id="rPortions" type="number" inputmode="numeric" value="1" min="1">
+  <label for="rPortions">Número de doses</label><input id="rPortions" type="text" inputmode="numeric" value="1" min="1">
   <h2 style="margin-top:16px">Ingredientes</h2>
   <ul class="list" id="rItems"></ul>
   <div class="row"><button class="food" id="rAddItem">+ Ingrediente</button></div>
@@ -302,9 +317,9 @@
   <div class="sheet-top"><h2>Calcular objetivo</h2><button class="x" id="cClose">✕</button></div>
   <div class="grid2">
     <div><label for="cSex">Sexo</label><select id="cSex"><option value="f">Mulher</option><option value="m">Homem</option></select></div>
-    <div><label for="cAge">Idade</label><input id="cAge" type="number" inputmode="numeric"></div>
-    <div><label for="cHeight">Altura (cm)</label><input id="cHeight" type="number" inputmode="numeric"></div>
-    <div><label for="cWeight">Peso atual (kg)</label><input id="cWeight" type="number" step="0.1" inputmode="decimal"></div>
+    <div><label for="cAge">Idade</label><input id="cAge" type="text" inputmode="numeric"></div>
+    <div><label for="cHeight">Altura (cm)</label><input id="cHeight" type="text" inputmode="numeric"></div>
+    <div><label for="cWeight">Peso atual (kg)</label><input id="cWeight" type="text" inputmode="decimal"></div>
   </div>
   <label for="cAct">Nível de atividade (sem contar o exercício que registas)</label>
   <select id="cAct">
@@ -314,15 +329,15 @@
     <option value="1.725">Muito ativa (6–7 treinos/semana)</option>
   </select>
   <div class="grid2">
-    <div><label for="cTarget">Peso que queres (kg)</label><input id="cTarget" type="number" step="0.1" inputmode="decimal"></div>
+    <div><label for="cTarget">Peso que queres (kg)</label><input id="cTarget" type="text" inputmode="decimal"></div>
     <div><label for="cRate">Ritmo</label><select id="cRate">
       <option value="0.25">0,25 kg/semana</option><option value="0.5" selected>0,5 kg/semana</option><option value="0.75">0,75 kg/semana</option></select></div>
   </div>
   <h2 style="margin-top:16px">Divisão dos macros (%)</h2>
   <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
-    <div><label for="cP">Proteína</label><input id="cP" type="number" inputmode="numeric" value="30"></div>
-    <div><label for="cC">Hidratos</label><input id="cC" type="number" inputmode="numeric" value="40"></div>
-    <div><label for="cF">Gordura</label><input id="cF" type="number" inputmode="numeric" value="30"></div>
+    <div><label for="cP">Proteína</label><input id="cP" type="text" inputmode="numeric" value="30"></div>
+    <div><label for="cC">Hidratos</label><input id="cC" type="text" inputmode="numeric" value="40"></div>
+    <div><label for="cF">Gordura</label><input id="cF" type="text" inputmode="numeric" value="30"></div>
   </div>
   <div class="card" style="background:var(--bg);margin-top:14px" id="cResult"></div>
   <div class="row"><button class="food" id="cApply">Usar estes objetivos</button></div>
@@ -553,11 +568,11 @@ function showMode(mode) {
   }
   if (mode==='manual') {
     html += `<label for="manName">Nome</label><input id="manName" placeholder="Ex.: Sopa de legumes">
-      <label for="manKcal">Calorias por 100 g</label><input id="manKcal" type="number" inputmode="decimal">
+      <label for="manKcal">Calorias por 100 g</label><input id="manKcal" type="text" inputmode="decimal">
       <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
-        <div><label for="manP">Proteína</label><input id="manP" type="number" inputmode="decimal" placeholder="g"></div>
-        <div><label for="manC">Hidratos</label><input id="manC" type="number" inputmode="decimal" placeholder="g"></div>
-        <div><label for="manF">Gordura</label><input id="manF" type="number" inputmode="decimal" placeholder="g"></div></div>
+        <div><label for="manP">Proteína</label><input id="manP" type="text" inputmode="decimal" placeholder="g"></div>
+        <div><label for="manC">Hidratos</label><input id="manC" type="text" inputmode="decimal" placeholder="g"></div>
+        <div><label for="manF">Gordura</label><input id="manF" type="text" inputmode="decimal" placeholder="g"></div></div>
       <p class="note">Macros por 100 g (opcional, vê no rótulo).</p>
       <p class="note">Se só souberes as calorias da dose toda, escreve-as aqui e no passo seguinte põe 100 g.</p>
       <div class="row"><button class="food" id="manGo">Continuar</button></div>`;
@@ -646,11 +661,11 @@ async function lookup(code) {
 function askUnknown(code, name) {
   $('sheetBody').innerHTML = `<p class="muted">${name ? 'Este produto não tem calorias na base de dados.' : 'Este produto ainda não está na base de dados.'} Escreve os dados do rótulo uma vez e fica guardado.</p>
     <label for="uName">Nome</label><input id="uName" value="${esc(name)}">
-    <label for="uKcal">Calorias por 100 g (ver rótulo)</label><input id="uKcal" type="number" inputmode="decimal">
+    <label for="uKcal">Calorias por 100 g (ver rótulo)</label><input id="uKcal" type="text" inputmode="decimal">
     <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
-        <div><label for="uP">Proteína</label><input id="uP" type="number" inputmode="decimal" placeholder="g"></div>
-        <div><label for="uC">Hidratos</label><input id="uC" type="number" inputmode="decimal" placeholder="g"></div>
-        <div><label for="uF">Gordura</label><input id="uF" type="number" inputmode="decimal" placeholder="g"></div></div>
+        <div><label for="uP">Proteína</label><input id="uP" type="text" inputmode="decimal" placeholder="g"></div>
+        <div><label for="uC">Hidratos</label><input id="uC" type="text" inputmode="decimal" placeholder="g"></div>
+        <div><label for="uF">Gordura</label><input id="uF" type="text" inputmode="decimal" placeholder="g"></div></div>
       <p class="note">Macros por 100 g (opcional, vê no rótulo).</p>
     <div class="row"><button class="food" id="uGo">Continuar</button></div>`;
   $('uGo').onclick = () => {
@@ -671,10 +686,10 @@ function askQty(food) {
       <div class="seg" style="margin-top:12px">
         <button data-qm="g" class="${!isUn?'active':''}">Gramas / ml</button>
         <button data-qm="un" class="${isUn?'active':''}">Unidades</button></div>
-      ${isUn ? `<label for="unitG">Peso de 1 unidade (g)</label><input id="unitG" type="number" inputmode="decimal" value="${defUnit}" placeholder="Ex.: 7">
+      ${isUn ? `<label for="unitG">Peso de 1 unidade (g)</label><input id="unitG" type="text" inputmode="decimal" value="${defUnit}" placeholder="Ex.: 7">
         <p class="note" style="margin-top:6px">${food.servingTxt && !food.unitG ? `A base de dados indica a porção: ${esc(food.servingTxt)}. ` : ''}Vê no rótulo (ex.: "1 tortilha = 7 g"). Se não disser, divide o peso do pacote pelo número de unidades. Só precisas de fazer isto uma vez.</p>` : ''}
       <label for="qty">${isUn ? 'Quantas unidades?' : 'Quantidade (g ou ml)'}</label>
-      <input id="qty" type="number" inputmode="decimal" value="${isUn ? (food.lastUnits||1) : (food.lastQty||100)}">
+      <input id="qty" type="text" inputmode="decimal" value="${isUn ? (food.lastUnits||1) : (food.lastQty||100)}">
       <div class="kcal-preview" id="qPrev"></div><div class="muted center" id="qMac"></div>
       <div class="row"><button class="food" id="qAdd">Adicionar</button></div>
       <div class="row"><button class="secondary" id="qBack">Voltar</button></div>`;
@@ -721,7 +736,7 @@ function askQty(food) {
 function askRecipe(r) {
   const per = recipeKcal(r)/r.portions;
   $('sheetBody').innerHTML = `<h2 style="margin:6px 0 2px">${esc(r.name)}</h2><div class="muted">${fmt(per)} kcal por dose</div>
-    <label for="por">Doses</label><input id="por" type="number" inputmode="decimal" value="1" step="0.5">
+    <label for="por">Doses</label><input id="por" type="text" inputmode="decimal" value="1" step="0.5">
     <div class="kcal-preview" id="pPrev"></div>
     <div class="row"><button class="food" id="pAdd">Adicionar</button></div>`;
   const upd = () => $('pPrev').textContent = `${fmt((+String($('por').value).replace(',','.')||0)*per)} kcal`;
@@ -845,11 +860,15 @@ $('cApply').onclick = () => {
 function renderCorpo() {
   if (!$('mDate').value) $('mDate').value = dayKey();
   const ms = [...data.measures].sort((a,b)=>b.date.localeCompare(a.date));
+  const fd = d => { const [y,mo,da] = d.split('-'); return `${da}/${mo}/${y}`; };
+  $('histCount').textContent = ms.length ? `(${ms.length})` : '';
   $('mList').innerHTML = ms.length ? ms.map(m => {
-    const parts = MEASURES.filter(([k])=>m[k]).map(([k,l,u])=>`${l} ${String(m[k]).replace('.',',')} ${u}`);
-    return `<li><div class="name">${new Date(m.date).toLocaleDateString('pt-PT',{day:'numeric',month:'short',year:'numeric'})}<small>${esc(parts.join(' · '))}</small></div>
-      <button class="x" data-mdel="${esc(m.date)}">✕</button></li>`;
-  }).join('') : '<li class="muted">Ainda sem medições.</li>';
+    const rows = MEASURES.filter(([k])=>m[k]!=null && m[k]!=='').map(([k,l,u]) =>
+      `<div class="mrow"><span>${esc(l)}</span><span><b>${String(m[k]).replace('.',',')}</b> ${esc(u)}</span></div>`).join('');
+    return `<details class="mday"><summary class="mday-btn">${fd(m.date)}</summary>
+      <div class="mday-body">${rows}
+        <div class="row"><button class="secondary danger" data-mdel="${esc(m.date)}">Apagar esta medição</button></div></div></details>`;
+  }).join('') : '<p class="muted">Ainda sem medições.</p>';
   $('mList').querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => {
     if (confirm('Apagar esta medição?')) { data.measures = data.measures.filter(m=>m.date!==b.dataset.mdel); save(); renderCorpo(); }
   });

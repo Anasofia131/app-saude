@@ -1,5 +1,5 @@
 // Funciona também com o Modo de Bloqueio do iPhone (onde a cache não existe)
-const CACHE = 'saude-v7';
+const CACHE = 'saude-v9';
 const FILES = ['./', './index.html', './scanner.js', './manifest.json', './icon-180.png', './icon-192.png', './icon-512.png'];
 const hasCache = typeof caches !== 'undefined';
 
