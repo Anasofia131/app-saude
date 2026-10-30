@@ -121,6 +121,15 @@
   .mrow { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:15px; }
   .mrow:last-of-type { border-bottom:0; }
   .mrow span:first-child { color:var(--muted); }
+  .sum-item { padding:10px 0; border-bottom:1px solid var(--line); font-size:15px; line-height:1.45; }
+  .sum-item:last-child { border-bottom:0; }
+  .tag { display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; }
+  .t-ok { background:var(--steps-soft); color:var(--steps); }
+  .t-hi { background:var(--food-soft); color:var(--food); }
+  .t-vhi { background:#f9dde2; color:var(--danger); }
+  .t-lo { background:var(--water-soft); color:var(--water); }
+  .up-good, .down-good { color:var(--steps); font-weight:600; }
+  .up-bad, .down-bad { color:var(--danger); font-weight:600; }
 </style>
 </head>
 <body>
@@ -241,6 +250,15 @@
 <!-- ============ CORPO ============ -->
 <section class="tab" id="tab-corpo">
   <header><h1>Corpo</h1></header>
+  <div class="card">
+    <h2>Os teus dados</h2>
+    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+      <div><label for="pSex">Sexo</label><select id="pSex"><option value="f">Mulher</option><option value="m">Homem</option></select></div>
+      <div><label for="pAge">Idade</label><input id="pAge" type="text" inputmode="numeric"></div>
+      <div><label for="pHeight">Altura (cm)</label><input id="pHeight" type="text" inputmode="numeric"></div>
+    </div>
+    <p class="note">Usados no resumo e na calculadora.</p>
+  </div>
   <div class="card" id="mForm">
     <h2 id="mFormTitle">Nova medição</h2>
     <label for="mDate">Data</label><input type="date" id="mDate">
@@ -249,6 +267,7 @@
       <div><label for="mFat">Gordura (%)</label><input type="text" inputmode="decimal" id="mFat"></div>
       <div><label for="mBasal">Basal (kcal)</label><input type="text" inputmode="decimal" id="mBasal"></div>
       <div><label for="mVisceral">Visceral (nível)</label><input type="text" inputmode="decimal" id="mVisceral"></div>
+      <div><label for="mMuscle">Músculo (%)</label><input type="text" inputmode="decimal" id="mMuscle"></div>
       <div><label for="mWaist">Cintura (cm)</label><input type="text" inputmode="decimal" id="mWaist"></div>
       <div><label for="mAbdomen">Abdómen (umbigo) (cm)</label><input type="text" inputmode="decimal" id="mAbdomen"></div>
       <div><label for="mHip">Anca (cm)</label><input type="text" inputmode="decimal" id="mHip"></div>
@@ -262,6 +281,11 @@
   <div class="card">
     <h2>Evolução do peso</h2>
     <div id="mChart"></div>
+  </div>
+  <div class="card">
+    <h2>Resumo da evolução</h2>
+    <div id="mSummary"></div>
+    <p class="note">Classificações segundo as tabelas do manual da balança Omron BF511 (gordura, visceral, músculo) e da OMS (IMC). Não substituem a avaliação de um profissional de saúde.</p>
   </div>
   <div class="card">
     <details class="hist" id="histBox">
@@ -350,7 +374,7 @@
 /* ---------- dados ---------- */
 const KEY = 'saude-v1';
 const MEALS = ['Pequeno-almoço','Almoço','Lanche','Jantar','Ceia'];
-const MEASURES = [['weight','Peso','kg'],['fat','Gordura','%'],['basal','Basal','kcal'],['visceral','Visceral','nível'],['waist','Cintura','cm'],['abdomen','Abdómen (umbigo)','cm'],['hip','Anca','cm'],['thigh','Coxa','cm'],['arm','Braço','cm'],['chest','Peito','cm']];
+const MEASURES = [['weight','Peso','kg'],['fat','Gordura','%'],['basal','Basal','kcal'],['visceral','Visceral','nível'],['muscle','Músculo','%'],['waist','Cintura','cm'],['abdomen','Abdómen (umbigo)','cm'],['hip','Anca','cm'],['thigh','Coxa','cm'],['arm','Braço','cm'],['chest','Peito','cm']];
 
 function blank() {
   return { goal:2000, kcalGoal:2000, stepsGoal:8000, macroGoal:{p:150,c:200,f:67}, countExercise:true, profile:{},
@@ -859,6 +883,7 @@ $('cApply').onclick = () => {
 
 /* ---------- CORPO ---------- */
 function renderCorpo() {
+  if (document.activeElement && !['pAge','pHeight','pSex'].includes(document.activeElement.id)) loadProfileForm();
   if (!$('mDate').value) $('mDate').value = dayKey();
   const ms = [...data.measures].sort((a,b)=>b.date.localeCompare(a.date));
   const fd = d => { const [y,mo,da] = d.split('-'); return `${da}/${mo}/${y}`; };
@@ -874,6 +899,7 @@ function renderCorpo() {
     if (confirm('Apagar esta medição?')) { data.measures = data.measures.filter(m=>m.date!==b.dataset.mdel); if (editingDate===b.dataset.mdel) endEdit(); save(); renderCorpo(); }
   });
   $('mList').querySelectorAll('[data-medit]').forEach(b => b.onclick = () => startEdit(b.dataset.medit));
+  renderSummary();
   // gráfico do peso
   const pts = data.measures.filter(m=>m.weight).sort((a,b)=>a.date.localeCompare(b.date));
   if (pts.length < 2) { $('mChart').innerHTML = '<p class="muted">O gráfico aparece a partir de duas medições de peso.</p>'; return; }
@@ -909,6 +935,11 @@ function endEdit() {
   $('mDate').value = dayKey();
 }
 $('mCancel').onclick = endEdit;
+function loadProfileForm() { const p = data.profile || {}; $('pSex').value = p.sex || 'f'; $('pAge').value = p.age || ''; $('pHeight').value = p.height || ''; }
+['pSex','pAge','pHeight'].forEach(id => $(id).addEventListener('change', () => {
+  data.profile = Object.assign({}, data.profile, { sex:$('pSex').value, age:num($('pAge').value), height:num($('pHeight').value) });
+  save(); renderCorpo();
+}));
 $('mSave').onclick = () => {
   const m = { date: $('mDate').value || dayKey() }; let any = false;
   for (const [k] of MEASURES) {
@@ -928,6 +959,96 @@ $('mSave').onclick = () => {
   endEdit();
   renderAll();
 };
+
+
+/* ---------- RESUMO DA EVOLUÇÃO ---------- */
+// Tabelas do manual Omron BF511 (mulheres) e OMS (IMC)
+const FAT_F = [[18,39,21.0,33.0,39.0],[40,59,23.0,34.0,40.0],[60,80,24.0,36.0,42.0]];   // baixo < a; normal a..b-0,1; alto b..c-0,1; muito alto >= c
+const MUS_F = [[18,39,24.3,30.4,35.4],[40,59,24.1,30.2,35.2],[60,80,23.9,30.0,35.0]];
+const CLS = { lo:['Baixo','t-lo'], ok:['Normal','t-ok'], hi:['Alto','t-hi'], vhi:['Muito alto','t-vhi'] };
+function band(tbl, age, v) {
+  const r = tbl.find(([a,b]) => age>=a && age<=b); if (!r) return null;
+  return v < r[2] ? 'lo' : v < r[3] ? 'ok' : v < r[4] ? 'hi' : 'vhi';
+}
+const viscBand = v => v <= 9 ? 'ok' : v <= 14 ? 'hi' : 'vhi';
+const bmiBand = v => v < 18.5 ? 'lo' : v < 25 ? 'ok' : v < 30 ? 'hi' : 'vhi';
+const BMI_TXT = { lo:'Abaixo do peso', ok:'Normal', hi:'Excesso de peso', vhi:'Obesidade' };
+// direção desejável para emagrecer: -1 = descer é bom, 1 = subir é bom, 0 = neutro
+const GOOD_DIR = { weight:-1, fat:-1, visceral:-1, muscle:1, waist:-1, abdomen:-1, hip:-1, basal:0, thigh:0, arm:0, chest:0 };
+const fdate = d => { const [y,m,da] = d.split('-'); return `${da}/${m}`; };
+const n1 = v => (Math.round(v*10)/10).toLocaleString('pt-PT');
+function profileVals() { const p = data.profile || {}; return { sex:p.sex||'f', age:num(p.age), height:num(p.height) }; }
+
+function renderSummary() {
+  const el = $('mSummary'); if (!el) return;
+  const ms = [...data.measures].sort((a,b)=>a.date.localeCompare(b.date));
+  if (!ms.length) { el.innerHTML = '<p class="muted">Regista medições para veres o resumo.</p>'; return; }
+  const pf = profileVals();
+  const out = [];
+  const tag = c => c ? `<span class="tag ${CLS[c][1]}">${CLS[c][0]}</span>` : '';
+  const lastOf = k => { for (let i=ms.length-1;i>=0;i--) if (ms[i][k]!=null) return ms[i]; return null; };
+  const firstOf = k => ms.find(m=>m[k]!=null) || null;
+  const prevOf = (k, last) => { const arr = ms.filter(m=>m[k]!=null && m.date<last.date); return arr.length ? arr[arr.length-1] : null; };
+  function change(k, unit) {
+    const last = lastOf(k), first = firstOf(k); if (!last) return { txt:'', dir:0 };
+    const prev = prevOf(k, last);
+    const parts = []; let dir = 0;
+    const fmtD = (a, b, ref) => {
+      const d = a - b; if (Math.abs(d) < 0.05) return `igual desde ${fdate(ref)}`;
+      const g = GOOD_DIR[k] || 0, good = g === 0 ? '' : (Math.sign(d) === g ? 'down-good' : 'up-bad');
+      return `<span class="${good}">${d>0?'+':'−'}${n1(Math.abs(d))} ${unit}</span> desde ${fdate(ref)}`;
+    };
+    if (first && first.date !== last.date) { parts.push(fmtD(last[k], first[k], first.date)); dir = Math.sign(last[k]-first[k]); }
+    if (prev && prev.date !== (first && first.date)) parts.push(fmtD(last[k], prev[k], prev.date) + ' (última)');
+    return { txt: parts.join(' · '), dir };
+  }
+  const item = (label, k, unit, cls, extra) => {
+    const last = lastOf(k); if (!last) return;
+    const c = change(k, unit);
+    out.push(`<div class="sum-item"><b>${label}:</b> ${n1(last[k])} ${unit}${tag(cls)}${c.txt ? `<br><span class="muted">${c.txt}</span>` : ''}${extra?`<br>${extra}`:''}</div>`);
+    return c;
+  };
+  const classify = pf.sex === 'f' && pf.age >= 18;
+
+  // frase principal
+  const highlights = [];
+  const fLast = lastOf('fat'), vLast = lastOf('visceral'), mLast = lastOf('muscle'), wLast = lastOf('weight');
+  const fatC = fLast && classify ? band(FAT_F, pf.age, fLast.fat) : null;
+  const musC = mLast && classify ? band(MUS_F, pf.age, mLast.muscle) : null;
+  const visC = vLast ? viscBand(vLast.visceral) : null;
+  const bmi = wLast && pf.height ? wLast.weight / Math.pow(pf.height/100, 2) : null;
+  const bmiC = bmi ? bmiBand(bmi) : null;
+
+  // peso
+  const wc = item('Peso', 'weight', 'kg', null, bmi ? `<span class="muted">IMC ${n1(bmi)}</span> <span class="tag ${CLS[bmiC][1]}">${BMI_TXT[bmiC]}</span>` : '');
+  const fc = item('Gordura corporal', 'fat', '%', fatC);
+  const vc = item('Gordura visceral', 'visceral', 'nível', visC);
+  const mc = item('Músculo esquelético', 'muscle', '%', musC);
+  item('Metabolismo basal', 'basal', 'kcal', null);
+  const cm = [['waist','Cintura'],['abdomen','Abdómen'],['hip','Anca'],['thigh','Coxa'],['arm','Braço'],['chest','Peito']];
+  cm.forEach(([k,l]) => item(l, k, 'cm', null));
+
+  // síntese em linguagem simples (só com base nos dados registados)
+  const say = [];
+  const word = c => c ? CLS[c][0].toLowerCase() : '';
+  if (fc && fLast) {
+    if (fc.dir < 0 && (fatC==='hi'||fatC==='vhi')) say.push(`Baixaste a gordura corporal, mas continua num nível <b>${word(fatC)}</b> para a tua idade.`);
+    else if (fc.dir < 0) say.push('Baixaste a gordura corporal.');
+    else if (fc.dir > 0) say.push(`A gordura corporal subiu${fatC?` e está num nível <b>${word(fatC)}</b>`:''}.`);
+    else if (fatC==='hi'||fatC==='vhi') say.push(`A gordura corporal está num nível <b>${word(fatC)}</b> para a tua idade.`);
+  }
+  if (vLast) say.push(visC==='ok' ? `A gordura visceral está <b>normal</b> (nível ${n1(vLast.visceral)}; normal até 9).` : `A gordura visceral está <b>${word(visC)}</b> (nível ${n1(vLast.visceral)}).`);
+  if (wc && wc.dir < 0) say.push('O peso está a descer.'); else if (wc && wc.dir > 0) say.push('O peso subiu desde a primeira medição.');
+  const ab = change('abdomen','cm'), wa = change('waist','cm');
+  if (ab.dir < 0 || wa.dir < 0) say.push(`Perdeste centímetros${ab.dir<0?' no abdómen':''}${ab.dir<0&&wa.dir<0?' e':''}${wa.dir<0?' na cintura':''}.`);
+  if (mc && mc.dir > 0) say.push('O músculo esquelético subiu.'); else if (mc && mc.dir < 0) say.push('O músculo esquelético desceu: vale a pena manter o treino de força e a proteína.');
+  if (musC==='lo') say.push('O músculo esquelético está <b>baixo</b> para a tua idade.');
+
+  let head = '';
+  if (!classify && (fLast || mLast)) head += '<p class="note" style="margin-top:0">Preenche "Os teus dados" (sexo e idade) para ver as classificações.</p>';
+  if (say.length) head += `<div class="card" style="background:var(--body-soft);margin:0 0 6px;padding:14px">${say.map(x=>`<div style="margin:2px 0">• ${x}</div>`).join('')}</div>`;
+  el.innerHTML = head + out.join('');
+}
 
 /* ---------- RECEITAS ---------- */
 let draft = null;
