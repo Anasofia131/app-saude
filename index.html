@@ -493,11 +493,12 @@ function kcalFrom(n) {
 const macrosFrom = n => ({ p100: n && n.proteins_100g!=null ? +n.proteins_100g : null,
   c100: n && n.carbohydrates_100g!=null ? +n.carbohydrates_100g : null, f100: n && n.fat_100g!=null ? +n.fat_100g : null });
 async function offBarcode(code) {
-  const r = await fetch(`${OFF}/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,product_name_pt,brands,nutriments`);
+  const r = await fetch(`${OFF}/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,product_name_pt,brands,nutriments,serving_quantity,serving_size`);
   const j = await r.json();
   if (j.status !== 1 || !j.product) return null;
   const p = j.product;
-  return { id:'b'+code, code, name:(p.product_name_pt||p.product_name||'Sem nome'), brand:p.brands||'', kcal100:kcalFrom(p.nutriments), ...macrosFrom(p.nutriments) };
+  return { id:'b'+code, code, name:(p.product_name_pt||p.product_name||'Sem nome'), brand:p.brands||'', kcal100:kcalFrom(p.nutriments), ...macrosFrom(p.nutriments),
+    servingG: +p.serving_quantity > 0 ? +p.serving_quantity : null, servingTxt: p.serving_size || '' };
 }
 async function offSearch(q) {
   const r = await fetch(`${OFF}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=code,product_name,product_name_pt,brands,nutriments`);
@@ -537,6 +538,8 @@ function showMode(mode) {
   }
   if (mode==='scan') {
     html += `<div id="reader"></div><p class="muted center" id="scanMsg">A abrir a câmara…</p>
+      <div class="row"><button class="food" id="photoBtn">📷 Tirar foto ao código</button></div>
+      <input type="file" id="photoIn" accept="image/*" capture="environment" hidden>
       <label for="codeIn">Ou escreve o código</label>
       <div class="row" style="margin-top:0"><input id="codeIn" inputmode="numeric" placeholder="5601234567890"><button class="food" id="codeGo" style="flex:0 0 90px">Procurar</button></div>`;
   }
@@ -562,6 +565,21 @@ function showMode(mode) {
 
   if (mode==='scan') {
     $('codeGo').onclick = () => lookup($('codeIn').value.trim());
+    $('photoBtn').onclick = async () => { await stopScanner(); $('photoIn').click(); };
+    $('photoIn').onchange = async e => {
+      const f = e.target.files[0]; if (!f) return;
+      $('scanMsg').textContent = 'A ler a fotografia…';
+      try {
+        const F = Html5QrcodeSupportedFormats;
+        const reader = new Html5Qrcode('reader', { formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E], verbose:false });
+        const code = await reader.scanFile(f, false);
+        try { reader.clear(); } catch {}
+        lookup(String(code).trim());
+      } catch {
+        $('scanMsg').textContent = 'Não consegui ler o código na foto. Tira outra mais perto e com boa luz, ou escreve o código.';
+      }
+      e.target.value = '';
+    };
     startScanner();
   }
   if (mode==='search') {
@@ -588,16 +606,16 @@ function showMode(mode) {
 }
 
 async function startScanner() {
-  if (!window.Html5Qrcode) { $('scanMsg').textContent = 'Leitor indisponível. Escreve o código à mão.'; return; }
+  if (!window.Html5Qrcode) { if ($('scanMsg')) $('scanMsg').textContent = 'Leitor indisponível. Escreve o código à mão.'; return; }
   try {
     const F = Html5QrcodeSupportedFormats;
     scanner = new Html5Qrcode('reader', { formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E], verbose:false });
     await scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{ width:250, height:120 } }, async code => {
       await stopScanner(); lookup(code);
     }, () => {});
-    $('scanMsg').textContent = 'Aponta para o código de barras.';
+    if ($('scanMsg')) $('scanMsg').textContent = 'Aponta para o código de barras.';
   } catch (e) {
-    $('scanMsg').textContent = 'Não foi possível abrir a câmara. Confirma a permissão da câmara ou escreve o código à mão.';
+    if ($('scanMsg')) $('scanMsg').textContent = 'A câmara em direto não está disponível. Usa "Tirar foto ao código" ou escreve o código.';
   }
 }
 
@@ -633,32 +651,60 @@ function askUnknown(code, name) {
 
 function askQty(food) {
   stopScanner();
-  $('sheetBody').innerHTML = `<h2 style="margin:6px 0 2px">${esc(food.name)}</h2><div class="muted">${esc(food.brand||'')} · ${fmt(food.kcal100)} kcal por 100 g</div>
-    <label for="qty">Quantidade (g ou ml)</label><input id="qty" type="number" inputmode="decimal" value="${food.lastQty||100}">
-    <div class="kcal-preview" id="qPrev"></div><div class="muted center" id="qMac"></div>
-    <div class="row"><button class="food" id="qAdd">Adicionar</button></div>
-    <div class="row"><button class="secondary" id="qBack">Voltar</button></div>`;
-  const calc = () => (+String($('qty').value).replace(',','.')||0) * food.kcal100 / 100;
+  let mode = food.lastMode === 'un' ? 'un' : 'g';
+  const unitG = () => num($('unitG') && $('unitG').value) || food.unitG || null;
+  const draw = () => {
+    const isUn = mode === 'un';
+    const defUnit = food.unitG || food.servingG || '';
+    $('sheetBody').innerHTML = `<h2 style="margin:6px 0 2px">${esc(food.name)}</h2><div class="muted">${esc(food.brand||'')} · ${fmt(food.kcal100)} kcal por 100 g</div>
+      <div class="seg" style="margin-top:12px">
+        <button data-qm="g" class="${!isUn?'active':''}">Gramas / ml</button>
+        <button data-qm="un" class="${isUn?'active':''}">Unidades</button></div>
+      ${isUn ? `<label for="unitG">Peso de 1 unidade (g)</label><input id="unitG" type="number" inputmode="decimal" value="${defUnit}" placeholder="Ex.: 7">
+        <p class="note" style="margin-top:6px">${food.servingTxt && !food.unitG ? `A base de dados indica a porção: ${esc(food.servingTxt)}. ` : ''}Vê no rótulo (ex.: "1 tortilha = 7 g"). Se não disser, divide o peso do pacote pelo número de unidades. Só precisas de fazer isto uma vez.</p>` : ''}
+      <label for="qty">${isUn ? 'Quantas unidades?' : 'Quantidade (g ou ml)'}</label>
+      <input id="qty" type="number" inputmode="decimal" value="${isUn ? (food.lastUnits||1) : (food.lastQty||100)}">
+      <div class="kcal-preview" id="qPrev"></div><div class="muted center" id="qMac"></div>
+      <div class="row"><button class="food" id="qAdd">Adicionar</button></div>
+      <div class="row"><button class="secondary" id="qBack">Voltar</button></div>`;
+    $('sheetBody').querySelectorAll('[data-qm]').forEach(b => b.onclick = () => { mode = b.dataset.qm; draw(); });
+    $('qty').oninput = upd; if ($('unitG')) $('unitG').oninput = upd;
+    $('qBack').onclick = () => showMode('mine');
+    $('qAdd').onclick = add;
+    upd(); $('qty').select();
+  };
+  const grams = () => {
+    const q = num($('qty').value) || 0;
+    return mode === 'un' ? q * (unitG() || 0) : q;
+  };
   const hasM = food.p100!=null || food.c100!=null || food.f100!=null;
   const mac = g => ({ p:(food.p100||0)*g/100, c:(food.c100||0)*g/100, f:(food.f100||0)*g/100 });
-  const upd = () => { $('qPrev').textContent = `${fmt(calc())} kcal`;
-    $('qMac').textContent = hasM ? macroTxt(mac(+String($('qty').value).replace(',','.')||0)) : 'Sem macros na base de dados para este alimento.'; };
-  $('qty').oninput = upd; upd(); $('qty').select();
-  $('qBack').onclick = () => showMode('mine');
-  $('qAdd').onclick = () => {
-    const g = +String($('qty').value).replace(',','.');
-    if (!(g>0)) { alert('Indica a quantidade.'); return; }
-    data.foods[food.id] = { id:food.id, code:food.code, name:food.name, brand:food.brand||'', kcal100:food.kcal100,
-      p100:food.p100??null, c100:food.c100??null, f100:food.f100??null, used:Date.now(), lastQty:g };
-    const kcal = g*food.kcal100/100;
+  function upd() {
+    if (mode === 'un' && !unitG()) { $('qPrev').textContent = '— kcal'; $('qMac').textContent = 'Indica o peso de 1 unidade.'; return; }
+    const g = grams();
+    $('qPrev').textContent = `${fmt(g*food.kcal100/100)} kcal`;
+    $('qMac').textContent = (mode==='un' ? `${fmt(g)} g · ` : '') + (hasM ? macroTxt(mac(g)) : 'Sem macros na base de dados para este alimento.');
+  }
+  function add() {
+    const q = num($('qty').value);
+    if (!(q>0)) { alert('Indica a quantidade.'); return; }
+    if (mode === 'un' && !unitG()) { alert('Indica o peso de 1 unidade.'); return; }
+    const g = grams();
+    const saved = { id:food.id, code:food.code, name:food.name, brand:food.brand||'', kcal100:food.kcal100,
+      p100:food.p100??null, c100:food.c100??null, f100:food.f100??null, servingG:food.servingG??null, servingTxt:food.servingTxt||'',
+      unitG: mode==='un' ? unitG() : (food.unitG??null), lastMode:mode, used:Date.now(),
+      lastQty: mode==='g' ? q : (food.lastQty||100), lastUnits: mode==='un' ? q : (food.lastUnits||1) };
+    data.foods[food.id] = saved;
+    const qtyTxt = mode==='un' ? `${String(q).replace('.',',')} unidade${q===1?'':'s'} (${fmt(g)} g)` : `${fmt(g)} g`;
     if (pick.target==='meal') {
-      (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:food.name, qty:`${fmt(g)} g`, kcal, ...(hasM?mac(g):{}), t:Date.now() });
+      (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:food.name, qty:qtyTxt, kcal:g*food.kcal100/100, ...(hasM?mac(g):{}), t:Date.now() });
       save(); closeSheet('sheet'); renderAll();
     } else {
       draft.items.push({ name:food.name, grams:g, kcal100:food.kcal100, p100:food.p100??null, c100:food.c100??null, f100:food.f100??null });
       save(); closeSheet('sheet'); renderDraft();
     }
-  };
+  }
+  draw();
 }
 
 function askRecipe(r) {
