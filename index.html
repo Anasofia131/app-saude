@@ -181,6 +181,9 @@
 
   <div class="card">
     <h2>Definições</h2>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:0;color:var(--text)">
+      <input type="checkbox" id="gAuto" style="width:22px;height:22px;flex:0 0 22px"> Calcular automaticamente com os meus dados</label>
+    <p class="note" id="gAutoInfo" style="margin-top:4px"></p>
     <div class="grid2">
       <div><label for="gWater">Água (ml/dia)</label><input type="text" id="gWater" inputmode="numeric"></div>
       <div><label for="gKcal">Calorias (kcal/dia)</label><input type="text" id="gKcal" inputmode="numeric"></div>
@@ -191,7 +194,7 @@
     </div>
     <label style="display:flex;align-items:center;gap:10px;margin-top:14px;color:var(--text)">
       <input type="checkbox" id="gCountEx" style="width:22px;height:22px;flex:0 0 22px"> Somar as calorias do exercício ao objetivo do dia</label>
-    <div class="row"><button class="food" id="openCalc">Calcular objetivo pelo peso</button></div>
+    <div class="row" style="display:none"><button class="food" id="openCalc">Calcular objetivo pelo peso</button></div>
     <div class="row">
       <button class="secondary" id="export">Exportar cópia</button>
       <button class="secondary" id="import">Importar cópia</button>
@@ -238,6 +241,19 @@
     <p class="note">As calorias gastas vêm do relógio, do Strava ou da máquina do ginásio. Se usares o Atalho, as calorias ativas da app Saúde entram sozinhas: nesse caso não repitas aqui as caminhadas do Strava, para não contar a dobrar.</p>
   </div>
   <div class="card">
+    <h2>Importar do Strava</h2>
+    <p class="note" style="margin-top:0">Escolhe o ficheiro <b>activities.csv</b> do arquivo do Strava. As atividades que já existem na app não são repetidas.</p>
+    <div class="row"><button class="steps" id="stravaBtn">📥 Importar activities.csv</button></div>
+    <input type="file" id="stravaIn" accept=".csv,text/csv" hidden>
+    <p class="note" id="stravaMsg"></p>
+  </div>
+  <div class="card">
+    <details class="hist" id="exHistBox">
+      <summary class="hist-main" style="background:var(--steps-soft);color:var(--steps)">Histórico de exercício <span class="muted" id="exHistCount"></span></summary>
+      <div id="exHist" style="margin-top:12px"></div>
+    </details>
+  </div>
+  <div class="card">
     <h2>Passos · últimos 7 dias</h2>
     <div class="week" id="stWeek"></div>
   </div>
@@ -257,7 +273,25 @@
       <div><label for="pAge">Idade</label><input id="pAge" type="text" inputmode="numeric"></div>
       <div><label for="pHeight">Altura (cm)</label><input id="pHeight" type="text" inputmode="numeric"></div>
     </div>
-    <p class="note">Usados no resumo e na calculadora.</p>
+    <label for="pAct">Nível de atividade</label>
+    <select id="pAct">
+      <option value="1.2">Sedentária (trabalho sentada, sem treino)</option>
+      <option value="1.375">Pouco ativa (1–3 treinos/semana)</option>
+      <option value="1.55">Moderada (3–5 treinos/semana)</option>
+      <option value="1.725">Muito ativa (6–7 treinos/semana)</option>
+    </select>
+    <div class="grid2">
+      <div><label for="pGoal">Objetivo</label><select id="pGoal">
+        <option value="-0.25">Perder 0,25 kg/semana</option><option value="-0.5">Perder 0,5 kg/semana</option>
+        <option value="-0.75">Perder 0,75 kg/semana</option><option value="0">Manter o peso</option>
+        <option value="0.25">Ganhar 0,25 kg/semana</option></select></div>
+      <div><label for="pTarget">Peso que queres (kg)</label><input id="pTarget" type="text" inputmode="decimal" placeholder="opcional"></div>
+    </div>
+    <label>Divisão dos macros (%): proteína · hidratos · gordura</label>
+    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+      <input id="pPP" type="text" inputmode="numeric"><input id="pPC" type="text" inputmode="numeric"><input id="pPF" type="text" inputmode="numeric">
+    </div>
+    <p class="note">Com estes dados e o último peso registado, a app calcula sozinha as calorias, os macros e a água (Hoje → Definições).</p>
   </div>
   <div class="card" id="mForm">
     <h2 id="mFormTitle">Nova medição</h2>
@@ -787,14 +821,82 @@ function renderPassos() {
   // exercício
   const ex = data.exercise[k] || [];
   $('exTotal').textContent = `${fmt(burned(k))} kcal`;
-  $('exList').innerHTML = ex.length ? ex.map((e,i)=>`<li><div class="name">${esc(e.name)}<small>${e.min?fmt(e.min)+' min':''}</small></div>
+  $('exList').innerHTML = ex.length ? ex.map((e,i)=>`<li><div class="name">${esc(e.name)}<small>${[e.min?fmt(e.min)+' min':'', e.km?String(e.km.toFixed(2)).replace('.',',')+' km':'', e.est?'kcal estimadas':''].filter(Boolean).join(' · ')}</small></div>
     <span class="val">${fmt(e.kcal)} kcal</span><button class="x" data-exdel="${i}">✕</button></li>`).join('') : '<li class="muted">Sem exercício registado hoje.</li>';
   $('exList').querySelectorAll('[data-exdel]').forEach(b => b.onclick = () => {
     if (confirm('Apagar este exercício?')) { data.exercise[k].splice(+b.dataset.exdel,1); save(); renderAll(); }
   });
   const names = new Set(); Object.values(data.exercise).flat().forEach(e => { if (e.name !== AUTO) names.add(e.name); });
   $('exNames').innerHTML = [...names].map(n=>`<option value="${esc(n)}">`).join('');
+  renderExHist();
 }
+function renderExHist() {
+  const days = Object.keys(data.exercise).filter(d => (data.exercise[d]||[]).length).sort().reverse();
+  $('exHistCount').textContent = days.length ? `(${days.length} dias)` : '';
+  const fd = d => { const [y,m,da] = d.split('-'); return `${da}/${m}/${y}`; };
+  $('exHist').innerHTML = days.length ? days.map(d => {
+    const list = data.exercise[d];
+    const tot = list.reduce((a,e)=>a+(e.kcal||0),0), km = list.reduce((a,e)=>a+(e.km||0),0), min = list.reduce((a,e)=>a+(e.min||0),0);
+    const rows = list.map(e => `<div class="mrow"><span>${esc(e.name)}${e.est?' <small>(estimado)</small>':''}</span><span>${[e.min?fmt(e.min)+' min':'', e.km?String(e.km.toFixed(2)).replace('.',',')+' km':'', fmt(e.kcal||0)+' kcal'].filter(Boolean).join(' · ')}</span></div>`).join('');
+    return `<details class="mday"><summary class="mday-btn"><span>${fd(d)}</span><span class="muted" style="font-weight:500;font-size:14px;margin-left:auto;margin-right:10px">${km?String(km.toFixed(1)).replace('.',',')+' km · ':''}${fmt(min)} min</span></summary>
+      <div class="mday-body">${rows}</div></details>`;
+  }).join('') : '<p class="muted">Ainda sem exercício registado.</p>';
+}
+
+/* ---------- IMPORTAR DO STRAVA (activities.csv) ---------- */
+function parseCSV(text) {
+  const rows = []; let row = [], f = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (q) { if (c === '"') { if (text[i+1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
+    else if (c === '"') q = true;
+    else if (c === ',') { row.push(f); f = ''; }
+    else if (c === '\n' || c === '\r') { if (c === '\r' && text[i+1] === '\n') i++; row.push(f); rows.push(row); row = []; f = ''; }
+    else f += c;
+  }
+  if (f !== '' || row.length) { row.push(f); rows.push(row); }
+  return rows.filter(r => r.length > 1);
+}
+const TYPE_PT = { Walk:'Caminhada', Run:'Corrida', Ride:'Bicicleta', Hike:'Caminhada na natureza', Swim:'Natação',
+  WeightTraining:'Musculação', Workout:'Treino', Yoga:'Ioga', Elliptical:'Elíptica', StairStepper:'Escadas', VirtualRide:'Bicicleta (indoor)', VirtualRun:'Corrida (passadeira)' };
+function latestWeight() { const m = data.measures.filter(x=>x.weight).sort((a,b)=>b.date.localeCompare(a.date))[0]; return m ? m.weight : null; }
+$('stravaBtn').onclick = () => $('stravaIn').click();
+$('stravaIn').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const rows = parseCSV(await f.text());
+    const H = rows[0].map(h => h.trim());
+    const col = n => H.indexOf(n);              // primeira ocorrência (o ficheiro tem colunas repetidas)
+    const cId = col('Activity ID'), cDate = col('Activity Date'), cName = col('Activity Name'), cType = col('Activity Type'),
+          cEl = col('Elapsed Time'), cMov = col('Moving Time'), cDist = col('Distance'), cCal = col('Calories');
+    if (cDate < 0 || cType < 0) { $('stravaMsg').textContent = 'Este ficheiro não parece ser o activities.csv do Strava.'; return; }
+    const w = latestWeight();
+    const known = new Set(Object.values(data.exercise).flat().map(x => x.stravaId).filter(Boolean));
+    let added = 0, skipped = 0, estimated = 0;
+    for (const r of rows.slice(1)) {
+      const id = r[cId]; if (id && known.has(id)) { skipped++; continue; }
+      const dt = new Date(r[cDate] + ' UTC');      // o Strava exporta em UTC
+      if (isNaN(dt)) continue;
+      const day = dayKey(dt);
+      const km = parseFloat(r[cDist]) || 0;
+      const secs = parseFloat(r[cMov]) || parseFloat(r[cEl]) || 0;
+      let kcal = parseFloat(r[cCal]); let est = false;
+      if (!(kcal > 0)) {
+        // estimativa ACSM para caminhada em plano: ~0,5 kcal por kg por km (custo líquido)
+        if (w && km && (r[cType]==='Walk' || r[cType]==='Hike')) { kcal = Math.round(0.5 * w * km); est = true; estimated++; }
+        else kcal = 0;
+      }
+      const tipo = TYPE_PT[r[cType]] || r[cType];
+      (data.exercise[day] ||= []).push({ name:`${tipo} (Strava)`, min:Math.round(secs/60), km, kcal:Math.round(kcal), est, stravaId:id, t:dt.getTime() });
+      added++;
+    }
+    save(); renderAll();
+    $('stravaMsg').innerHTML = `✓ ${added} atividade${added===1?'':'s'} importada${added===1?'':'s'}` + (skipped?`, ${skipped} já existia${skipped===1?'':'m'}`:'') +
+      (estimated ? `. As calorias de ${estimated} foram estimadas${w?` com o teu peso (${String(w).replace('.',',')} kg)`:''}, porque o Strava não as tinha.` : '.') +
+      (!w ? ' Regista o peso no separador Corpo para estimar as calorias.' : '');
+  } catch (err) { $('stravaMsg').textContent = 'Não foi possível ler o ficheiro.'; }
+  e.target.value = '';
+};
 const intNum = v => { const d = String(v ?? '').split(/[.,]/)[0].replace(/\D/g,''); return d ? +d : NaN; };
 const decNum = v => parseFloat(String(v ?? '').trim().replace(',','.'));
 function setSteps(steps, km) {
@@ -830,6 +932,41 @@ $('exAdd').onclick = () => {
   $('exName').value = $('exMin').value = $('exKcal').value = '';
   save(); renderAll();
 };
+
+/* ---------- OBJETIVOS AUTOMÁTICOS ---------- */
+// Calorias: Mifflin-St Jeor x nível de atividade + ritmo (~7700 kcal por kg).
+// Água: EFSA, ingestão adequada de água total 2,0 L (mulheres) / 2,5 L (homens); ~20% vem dos alimentos,
+// por isso o objetivo de bebidas é 1,6 L / 2,0 L.
+function autoGoals() {
+  const p = data.profile || {};
+  const w = (data.measures.filter(m=>m.weight).sort((a,b)=>b.date.localeCompare(a.date))[0] || {}).weight || num(p.weight);
+  if (!(p.age > 0 && p.height > 0 && w > 0 && p.act)) return null;   // só calcula depois de escolhido o nível de atividade
+  const act = +p.act, rate = p.goalRate != null ? +p.goalRate : -0.5;
+  const bmr = 10*w + 6.25*p.height - 5*p.age + (p.sex==='m' ? 5 : -161);
+  const tdee = bmr * act;
+  const kcal = Math.round((tdee + rate*7700/7) / 10) * 10;
+  const pc = p.pc && p.pc.length === 3 ? p.pc : [30,40,30];
+  return { w, bmr, tdee, kcal, water: p.sex==='m' ? 2000 : 1600,
+    p: Math.round(kcal*pc[0]/100/4), c: Math.round(kcal*pc[1]/100/4), f: Math.round(kcal*pc[2]/100/9), pcSum: pc[0]+pc[1]+pc[2] };
+}
+function applyAuto() {
+  if (data.autoGoals === false) return null;
+  const g = autoGoals(); if (!g) return null;
+  const changed = data.kcalGoal !== g.kcal || data.goal !== g.water || data.macroGoal.p !== g.p || data.macroGoal.c !== g.c || data.macroGoal.f !== g.f;
+  if (changed) { data.kcalGoal = g.kcal; data.goal = g.water; data.macroGoal = { p:g.p, c:g.c, f:g.f }; save(); }
+  return g;
+}
+function renderAutoInfo() {
+  const on = data.autoGoals !== false, g = autoGoals();
+  $('gAuto').checked = on;
+  ['gWater','gKcal','gP','gC','gF'].forEach(id => { $(id).disabled = on && !!g; $(id).style.opacity = on && g ? .6 : 1; });
+  if (!on) { $('gAutoInfo').textContent = 'Objetivos escritos à mão.'; return; }
+  if (!g) { $('gAutoInfo').innerHTML = 'Falta preencher <b>Corpo → Os teus dados</b> (idade, altura, nível de atividade e objetivo) e registar o peso. Até lá, ficam os valores escritos à mão.'; return; }
+  const warn = g.kcal < g.bmr ? ' <span style="color:var(--danger)">Fica abaixo do metabolismo basal: escolhe um ritmo mais lento ou fala com um nutricionista.</span>' : '';
+  const pcw = g.pcSum !== 100 ? ` <span style="color:var(--danger)">A divisão dos macros soma ${g.pcSum}%.</span>` : '';
+  $('gAutoInfo').innerHTML = `Com ${String(g.w).replace('.',',')} kg: basal ${fmt(g.bmr)} kcal · manter ${fmt(g.tdee)} kcal → objetivo <b>${fmt(g.kcal)} kcal</b>. Água: mínimo recomendado pela EFSA em bebidas; bebe mais nos dias de treino e de calor.${warn}${pcw}`;
+}
+$('gAuto').onchange = e => { data.autoGoals = e.target.checked; save(); renderAll(); };
 
 /* ---------- CALCULADORA DO OBJETIVO ---------- */
 function calcResult() {
@@ -875,15 +1012,15 @@ $('openCalc').onclick = () => {
 $('cClose').onclick = () => closeSheet('cSheet');
 $('cApply').onclick = () => {
   const r = calcResult(); if (!r) return;
-  data.profile = { sex:$('cSex').value, age:num($('cAge').value), height:num($('cHeight').value), weight:num($('cWeight').value),
-    act:$('cAct').value, target:num($('cTarget').value), rate:$('cRate').value, pc:[num($('cP').value),num($('cC').value),num($('cF').value)] };
+  data.profile = Object.assign({}, data.profile, { sex:$('cSex').value, age:num($('cAge').value), height:num($('cHeight').value), weight:num($('cWeight').value),
+    act:$('cAct').value, target:num($('cTarget').value), pc:[num($('cP').value),num($('cC').value),num($('cF').value)] });
   data.kcalGoal = r.kcal; data.macroGoal = { p:r.p, c:r.c, f:r.f };
   save(); closeSheet('cSheet'); renderAll();
 };
 
 /* ---------- CORPO ---------- */
 function renderCorpo() {
-  if (document.activeElement && !['pAge','pHeight','pSex'].includes(document.activeElement.id)) loadProfileForm();
+  if (!document.activeElement || !PFIELDS.includes(document.activeElement.id)) loadProfileForm();
   if (!$('mDate').value) $('mDate').value = dayKey();
   const ms = [...data.measures].sort((a,b)=>b.date.localeCompare(a.date));
   const fd = d => { const [y,mo,da] = d.split('-'); return `${da}/${mo}/${y}`; };
@@ -935,10 +1072,19 @@ function endEdit() {
   $('mDate').value = dayKey();
 }
 $('mCancel').onclick = endEdit;
-function loadProfileForm() { const p = data.profile || {}; $('pSex').value = p.sex || 'f'; $('pAge').value = p.age || ''; $('pHeight').value = p.height || ''; }
-['pSex','pAge','pHeight'].forEach(id => $(id).addEventListener('change', () => {
-  data.profile = Object.assign({}, data.profile, { sex:$('pSex').value, age:num($('pAge').value), height:num($('pHeight').value) });
-  save(); renderCorpo();
+function loadProfileForm() {
+  const p = data.profile || {}, pc = p.pc && p.pc.length===3 ? p.pc : [30,40,30];
+  $('pSex').value = p.sex || 'f'; $('pAge').value = p.age || ''; $('pHeight').value = p.height || '';
+  $('pAct').value = p.act || ''; if (!p.act) $('pAct').selectedIndex = -1; $('pGoal').value = p.goalRate != null ? String(p.goalRate) : '-0.5';
+  $('pTarget').value = p.target ? String(p.target).replace('.',',') : '';
+  $('pPP').value = pc[0]; $('pPC').value = pc[1]; $('pPF').value = pc[2];
+}
+const PFIELDS = ['pSex','pAge','pHeight','pAct','pGoal','pTarget','pPP','pPC','pPF'];
+PFIELDS.forEach(id => $(id).addEventListener('change', () => {
+  data.profile = Object.assign({}, data.profile, { sex:$('pSex').value, age:num($('pAge').value), height:num($('pHeight').value),
+    act:$('pAct').value, goalRate:+$('pGoal').value, target:num($('pTarget').value),
+    pc:[num($('pPP').value)||0, num($('pPC').value)||0, num($('pPF').value)||0] });
+  save(); renderAll();
 }));
 $('mSave').onclick = () => {
   const m = { date: $('mDate').value || dayKey() }; let any = false;
@@ -1044,6 +1190,19 @@ function renderSummary() {
   if (mc && mc.dir > 0) say.push('O músculo esquelético subiu.'); else if (mc && mc.dir < 0) say.push('O músculo esquelético desceu: vale a pena manter o treino de força e a proteína.');
   if (musC==='lo') say.push('O músculo esquelético está <b>baixo</b> para a tua idade.');
 
+  // peso-alvo
+  if (wLast) {
+    const tgt = num((data.profile||{}).target), rate = Math.abs(+((data.profile||{}).goalRate ?? -0.5)) || 0.5;
+    if (tgt > 0 && Math.abs(wLast.weight - tgt) >= 0.1) {
+      const diff = wLast.weight - tgt, weeks = Math.abs(diff) / rate, end = new Date(); end.setDate(end.getDate() + Math.round(weeks*7));
+      say.push(`Peso-alvo ${n1(tgt)} kg: faltam <b>${n1(Math.abs(diff))} kg</b>. A ${n1(rate)} kg/semana, chegas por volta de <b>${end.toLocaleDateString('pt-PT',{month:'long',year:'numeric'})}</b> (~${Math.round(weeks)} semanas).`);
+    } else if (tgt > 0) say.push(`Estás no teu peso-alvo (${n1(tgt)} kg). 🎉`);
+    if (fLast && classify && fLast.date === wLast.date) {
+      const lean = wLast.weight * (1 - fLast.fat/100), r = FAT_F.find(([a,b]) => pf.age>=a && pf.age<=b);
+      if (r && fLast.fat >= r[3]) say.push(`Referência: mantendo a massa magra (~${n1(lean)} kg), chegarias ao limite do normal da Omron (${n1(r[3]-0.1)}% de gordura) com cerca de <b>${n1(lean/(1-(r[3]-0.1)/100))} kg</b>.`);
+    }
+  }
+
   let head = '';
   if (!classify && (fLast || mLast)) head += '<p class="note" style="margin-top:0">Preenche "Os teus dados" (sexo e idade) para ver as classificações.</p>';
   if (say.length) head += `<div class="card" style="background:var(--body-soft);margin:0 0 6px;padding:14px">${say.map(x=>`<div style="margin:2px 0">• ${x}</div>`).join('')}</div>`;
@@ -1094,7 +1253,7 @@ $('rDelete').onclick = () => {
 };
 
 /* ---------- arranque ---------- */
-function renderAll(){ renderHoje(); renderComida(); renderPassos(); renderCorpo(); renderReceitas(); }
+function renderAll(){ applyAuto(); renderHoje(); renderAutoInfo(); renderComida(); renderPassos(); renderCorpo(); renderReceitas(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAll(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 renderAll();
