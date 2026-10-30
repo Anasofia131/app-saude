@@ -121,6 +121,22 @@
   .mrow { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:15px; }
   .mrow:last-of-type { border-bottom:0; }
   .mrow span:first-child { color:var(--muted); }
+  .ex { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .ex:last-child { border-bottom:0; }
+  .ex .chk { width:30px; height:30px; flex:0 0 30px; border-radius:50%; border:2px solid var(--line); background:none; padding:0; font-size:16px; color:#fff; }
+  .ex .chk.on { background:var(--steps); border-color:var(--steps); }
+  .ex .info { flex:1; min-width:0; }
+  .ex .info b { display:block; font-size:15px; }
+  .ex .info small { color:var(--muted); font-size:13px; }
+  .ex.done .info b { text-decoration:line-through; color:var(--muted); }
+  .ex .rest { padding:8px 10px; font-size:13px; background:var(--food-soft); color:var(--food); }
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; }
+  .chips button { padding:8px 14px; font-size:14px; background:var(--bg); color:var(--muted); font-weight:500; }
+  .chips button.active { background:var(--food-soft); color:var(--food); font-weight:700; }
+  .classes { font-size:14px; color:var(--muted); margin-top:6px; line-height:1.5; }
+  .edit-ex { display:grid; grid-template-columns:1fr 1fr 1fr 30px; gap:6px; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--line); }
+  .edit-ex > input:first-child { grid-column:1 / -1; font-weight:600; }
+  .edit-ex input { padding:8px; font-size:14px; }
   .sum-item { padding:10px 0; border-bottom:1px solid var(--line); font-size:15px; line-height:1.45; }
   .sum-item:last-child { border-bottom:0; }
   .tag { display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:999px; margin-left:6px; }
@@ -215,6 +231,38 @@
   <div id="meals"></div>
 </section>
 
+<!-- ============ TREINO ============ -->
+<section class="tab" id="tab-treino">
+  <header><h1>Treino</h1><div class="date" id="trDayLbl"></div></header>
+  <div id="trMain"></div>
+  <div class="card">
+    <h2>Hoje fiz outra coisa</h2>
+    <div class="grid2">
+      <button class="steps" data-quick="walk">🚶 Caminhada</button>
+      <button class="steps" data-quick="cycle">🚴 Cycle</button>
+      <button class="steps" data-quick="cross">🏋️ Cross Training</button>
+      <button class="secondary" id="trOther">Outro treino</button>
+    </div>
+    <div id="trOtherList" style="display:none;margin-top:10px"></div>
+  </div>
+  <div class="card">
+    <details class="hist">
+      <summary class="hist-main" style="background:var(--food-soft);color:var(--food)">Plano semanal e aulas</summary>
+      <div id="trWeek" style="margin-top:12px"></div>
+    </details>
+  </div>
+  <div class="card">
+    <details class="hist">
+      <summary class="hist-main" style="background:var(--body-soft);color:var(--body)">Editar treinos</summary>
+      <div id="trEdit" style="margin-top:12px"></div>
+    </details>
+  </div>
+</section>
+<div id="restBar" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 76px);z-index:15;
+  background:var(--text);color:var(--bg);border-radius:16px;padding:12px 16px;align-items:center;justify-content:space-between;font-weight:600;max-width:456px;margin:0 auto">
+  <span id="restTxt"></span><button id="restStop" style="background:var(--bg);color:var(--text);padding:8px 14px">Parar</button>
+</div>
+
 <!-- ============ PASSOS ============ -->
 <section class="tab" id="tab-passos">
   <header><h1>Atividade</h1><div class="date" id="stepsDayLbl"></div></header>
@@ -287,10 +335,13 @@
         <option value="0.25">Ganhar 0,25 kg/semana</option></select></div>
       <div><label for="pTarget">Peso que queres (kg)</label><input id="pTarget" type="text" inputmode="decimal" placeholder="opcional"></div>
     </div>
-    <label>Divisão dos macros (%): proteína · hidratos · gordura</label>
-    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
-      <input id="pPP" type="text" inputmode="numeric"><input id="pPC" type="text" inputmode="numeric"><input id="pPF" type="text" inputmode="numeric">
-    </div>
+    <details style="margin-top:12px"><summary class="muted" style="cursor:pointer">Avançado (macros)</summary>
+      <div class="grid2">
+        <div><label for="pProt">Proteína (g por kg)</label><input id="pProt" type="text" inputmode="decimal" placeholder="1,6"></div>
+        <div><label for="pFat">Gordura (% das calorias)</label><input id="pFat" type="text" inputmode="numeric" placeholder="30"></div>
+      </div>
+      <p class="note">Por defeito: proteína 1,6 g/kg (a ISSN recomenda 1,4–2,0 g/kg para quem treina), gordura 30% das calorias e os hidratos ficam com o resto.</p>
+    </details>
     <p class="note">Com estes dados e o último peso registado, a app calcula sozinha as calorias, os macros e a água (Hoje → Definições).</p>
   </div>
   <div class="card" id="mForm">
@@ -344,6 +395,7 @@
 <nav>
   <button data-tab="hoje" class="active"><span class="ic">🏠</span>Hoje</button>
   <button data-tab="comida"><span class="ic">🍽️</span>Comida</button>
+  <button data-tab="treino"><span class="ic">🏋️</span>Treino</button>
   <button data-tab="passos"><span class="ic">👟</span>Atividade</button>
   <button data-tab="corpo"><span class="ic">📏</span>Corpo</button>
   <button data-tab="receitas"><span class="ic">🥗</span>Receitas</button>
@@ -945,9 +997,10 @@ function autoGoals() {
   const bmr = 10*w + 6.25*p.height - 5*p.age + (p.sex==='m' ? 5 : -161);
   const tdee = bmr * act;
   const kcal = Math.round((tdee + rate*7700/7) / 10) * 10;
-  const pc = p.pc && p.pc.length === 3 ? p.pc : [30,40,30];
-  return { w, bmr, tdee, kcal, water: p.sex==='m' ? 2000 : 1600,
-    p: Math.round(kcal*pc[0]/100/4), c: Math.round(kcal*pc[1]/100/4), f: Math.round(kcal*pc[2]/100/9), pcSum: pc[0]+pc[1]+pc[2] };
+  // Proteína pelo peso (ISSN: 1,4–2,0 g/kg para quem treina); gordura em % das calorias; hidratos = o resto
+  const gkg = num(p.protPerKg) || 1.6, fatPct = num(p.fatPct) || 30;
+  const P = Math.round(gkg * w), F = Math.round(kcal * fatPct / 100 / 9), C = Math.max(0, Math.round((kcal - P*4 - F*9) / 4));
+  return { w, bmr, tdee, kcal, water: p.sex==='m' ? 2000 : 1600, p:P, c:C, f:F, pcSum:100 };
 }
 function applyAuto() {
   if (data.autoGoals === false) return null;
@@ -1073,17 +1126,17 @@ function endEdit() {
 }
 $('mCancel').onclick = endEdit;
 function loadProfileForm() {
-  const p = data.profile || {}, pc = p.pc && p.pc.length===3 ? p.pc : [30,40,30];
+  const p = data.profile || {};
   $('pSex').value = p.sex || 'f'; $('pAge').value = p.age || ''; $('pHeight').value = p.height || '';
   $('pAct').value = p.act || ''; if (!p.act) $('pAct').selectedIndex = -1; $('pGoal').value = p.goalRate != null ? String(p.goalRate) : '-0.5';
   $('pTarget').value = p.target ? String(p.target).replace('.',',') : '';
-  $('pPP').value = pc[0]; $('pPC').value = pc[1]; $('pPF').value = pc[2];
+  $('pProt').value = p.protPerKg ? String(p.protPerKg).replace('.',',') : ''; $('pFat').value = p.fatPct || '';
 }
-const PFIELDS = ['pSex','pAge','pHeight','pAct','pGoal','pTarget','pPP','pPC','pPF'];
+const PFIELDS = ['pSex','pAge','pHeight','pAct','pGoal','pTarget','pProt','pFat'];
 PFIELDS.forEach(id => $(id).addEventListener('change', () => {
   data.profile = Object.assign({}, data.profile, { sex:$('pSex').value, age:num($('pAge').value), height:num($('pHeight').value),
     act:$('pAct').value, goalRate:+$('pGoal').value, target:num($('pTarget').value),
-    pc:[num($('pPP').value)||0, num($('pPC').value)||0, num($('pPF').value)||0] });
+    protPerKg:num($('pProt').value), fatPct:num($('pFat').value) });
   save(); renderAll();
 }));
 $('mSave').onclick = () => {
@@ -1252,8 +1305,174 @@ $('rDelete').onclick = () => {
   data.recipes = data.recipes.filter(r=>r.id!==draft.id); save(); closeSheet('rSheet'); renderAll();
 };
 
+
+/* ---------- TREINO ---------- */
+// METs do Compêndio de Atividades Físicas (2011/2024)
+const MET = { strength:3.5, cycle:9.0, cross:7.5, walk:4.3 };
+const CLASSES = { // horário do Fitness Factory indicado pela Ana (dia 0=domingo)
+  cycle: { name:'Cycle', times:{2:['19:00'],4:['17:30'],5:['12:30']} },
+  cross: { name:'Cross Training', times:{2:['12:30','19:45'],4:['18:30'],5:['08:30','13:15']} }
+};
+const WD = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+function defaultWorkouts() {
+  const st = (name, sets, reps, rest) => ({ name, sets, reps, rest });
+  const cl = (name, cls, min) => ({ name, cls, min });
+  return {
+    A: { name:'Glúteos e posteriores', items:[ st('Hip thrust na máquina',4,'10–12',90), st('Peso morto romeno com halteres',3,'10–12',90),
+         st('Abdução na máquina',3,'15',60), st('Afundo búlgaro',3,'10 por perna',60), st('Flexão de pernas (leg curl)',3,'12',60), st('Prancha',3,'30–40 s',30) ] },
+    B: { name:'Cross Training + braços', items:[ cl('Aula de Cross Training','cross',30), st('Remada baixa na polia',3,'12',60),
+         st('Bíceps com halteres',3,'12',45), st('Tríceps na polia',3,'12',45) ] },
+    C: { name:'Pernas com foco nos glúteos', items:[ st('Leg press, pés altos',4,'10–12',90), st('Agachamento goblet',3,'12',90),
+         st('Kickback de glúteo na polia',3,'12 por perna',45), st('Extensão de pernas',3,'12–15',60), st('Abdução na máquina',3,'15',60),
+         st('Elevação de pernas deitada',3,'12',30) ] },
+    D: { name:'Cycle + costas, braços e core', items:[ cl('Aula de Cycle','cycle',30), st('Puxada à frente na polia',3,'12',60),
+         st('Elevação lateral leve (se o ombro deixar)',3,'12–15',45), st('Bíceps martelo',3,'12',45), st('Tríceps com corda',3,'12',45),
+         st('Prancha lateral',3,'20–30 s por lado',30) ] }
+  };
+}
+function ensureTraining() {
+  if (!data.workouts) data.workouts = defaultWorkouts();
+  if (!data.weekPlan) data.weekPlan = { 0:'R', 1:'A', 2:'B', 3:'C', 4:'D', 5:'L', 6:'R' };   // L = aula à escolha, R = descanso
+  data.sessions ||= {};
+}
+ensureTraining();
+const PLAN_LBL = { R:'Descanso (caminhada)', L:'Aula à escolha (Cycle ou Cross Training)' };
+const wLabel = id => data.workouts[id] ? `${id} – ${data.workouts[id].name}` : (PLAN_LBL[id] || id);
+const itemSecs = it => it.cls ? it.min*60 : it.sets * (45 + it.rest);          // ~45 s por série + pausa
+const curWeight = () => (data.measures.filter(m=>m.weight).sort((a,b)=>b.date.localeCompare(a.date))[0] || {}).weight || num((data.profile||{}).weight) || 0;
+const kcalFor = (met, min) => Math.round(met * curWeight() * min / 60);
+let trTime = 0, restTimer = null;
+
+function todaySession() {
+  const k = dayKey();
+  data.sessions[k] ||= { workout: data.weekPlan[new Date().getDay()], done: [], finished: false };
+  return data.sessions[k];
+}
+function classesToday() {
+  const d = new Date().getDay();
+  return Object.values(CLASSES).filter(c => c.times[d]).map(c => `${c.name}: ${c.times[d].join(' e ')}`);
+}
+function renderTreino() {
+  ensureTraining();
+  const now = new Date(), ses = todaySession(), wid = ses.workout, w = data.workouts[wid];
+  $('trDayLbl').textContent = now.toLocaleDateString('pt-PT',{weekday:'long', day:'numeric', month:'long'});
+  const cls = classesToday();
+  const clsHtml = cls.length ? `<div class="classes">📅 Aulas hoje: ${cls.map(esc).join(' · ')}</div>` : '';
+  let html = '';
+  if (!w) {
+    html = `<div class="card"><h2>${esc(WD[now.getDay()])}: ${esc(PLAN_LBL[wid] || 'Descanso')}</h2>${clsHtml}
+      <p class="note">${wid==='L' ? 'Escolhe uma aula em "Hoje fiz outra coisa" quando a fizeres.' : 'Dia de descanso. Uma caminhada é sempre bem-vinda.'}</p></div>`;
+  } else {
+    // escolher o que cabe no tempo, por ordem de prioridade
+    let idx = w.items.map((_,i)=>i);
+    if (trTime) { let acc = 0; idx = idx.filter(i => { const t = itemSecs(w.items[i]); if (i===0 || acc + t <= trTime*60) { acc += t; return true; } return false; }); }
+    const total = Math.round(idx.reduce((a,i)=>a+itemSecs(w.items[i]),0)/60);
+    const cut = w.items.length - idx.length;
+    html = `<div class="card">
+      <div class="meal-head"><h2>${esc(wid)} – ${esc(w.name)}</h2>${ses.finished?'<span class="tag t-ok">Feito ✓</span>':''}</div>${clsHtml}
+      <div class="chips">${[0,30,45,60].map(t=>`<button data-tt="${t}" class="${trTime===t?'active':''}">${t?t+' min':'Tudo'}</button>`).join('')}</div>
+      <p class="note" style="margin-top:2px">Tempo estimado: ~${total} min${cut?` · ${cut} exercício${cut>1?'s':''} fora por falta de tempo`:''}</p>
+      ${idx.map(i => { const it = w.items[i], on = ses.done.includes(i);
+        return `<div class="ex ${on?'done':''}"><button class="chk ${on?'on':''}" data-chk="${i}">${on?'✓':''}</button>
+          <div class="info"><b>${esc(it.name)}</b><small>${it.cls ? `${it.min} min de aula` : `${it.sets} × ${esc(it.reps)} · pausa ${it.rest} s`}</small></div>
+          ${it.cls ? '' : `<button class="rest" data-rest="${it.rest}">⏱ ${it.rest}s</button>`}</div>`; }).join('')}
+      <div class="row"><button class="food" id="trFinish">${ses.finished ? 'Atualizar registo' : '✓ Treino feito'}</button></div>
+    </div>`;
+  }
+  $('trMain').innerHTML = html;
+  $('trMain').querySelectorAll('[data-tt]').forEach(b => b.onclick = () => { trTime = +b.dataset.tt; renderTreino(); });
+  $('trMain').querySelectorAll('[data-chk]').forEach(b => b.onclick = () => {
+    const i = +b.dataset.chk, d = ses.done; const j = d.indexOf(i); if (j>=0) d.splice(j,1); else d.push(i); save(); renderTreino(); });
+  $('trMain').querySelectorAll('[data-rest]').forEach(b => b.onclick = () => startRest(+b.dataset.rest));
+  if ($('trFinish')) $('trFinish').onclick = finishWorkout;
+  // outro treino
+  $('trOtherList').innerHTML = Object.keys(data.workouts).map(id => `<button class="secondary" data-ow="${id}" style="width:100%;margin-bottom:6px;text-align:left">${esc(wLabel(id))}</button>`).join('');
+  $('trOtherList').querySelectorAll('[data-ow]').forEach(b => b.onclick = () => {
+    const ses = todaySession(); if (ses.workout !== b.dataset.ow) { ses.workout = b.dataset.ow; ses.done = []; ses.finished = false; }
+    $('trOtherList').style.display = 'none'; save(); renderTreino(); window.scrollTo(0,0); });
+  renderTrWeek(); renderTrEdit();
+}
+$('trOther').onclick = () => { const l = $('trOtherList'); l.style.display = l.style.display==='none' ? '' : 'none'; };
+
+function finishWorkout() {
+  const ses = todaySession(), w = data.workouts[ses.workout]; if (!w) return;
+  const used = ses.done.length ? ses.done : w.items.map((_,i)=>i);
+  let kcal = 0, mins = 0;
+  for (const i of used) { const it = w.items[i]; if (!it) continue; const m = itemSecs(it)/60; mins += m; kcal += kcalFor(it.cls ? MET[it.cls] : MET.strength, m); }
+  const ans = prompt('Quantos minutos treinaste?', Math.round(mins)); if (ans === null) return;
+  const real = num(ans) || Math.round(mins);
+  // minutos a mais contam como musculação; minutos a menos reduzem proporcionalmente
+  kcal = real >= mins ? Math.round(kcal + kcalFor(MET.strength, real - mins)) : Math.round(kcal * real / Math.max(mins,1));
+  const k = dayKey(), name = `Treino ${ses.workout} – ${w.name}`;
+  data.exercise[k] = (data.exercise[k]||[]).filter(e => !e.workout);
+  data.exercise[k].push({ name, min:real, kcal, est:true, workout:ses.workout, t:Date.now() });
+  ses.finished = true; save(); renderAll();
+  alert(`Registado: ${name}, ${real} min, ~${kcal} kcal (estimado).`);
+}
+document.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
+  const q = b.dataset.quick, names = { walk:'Caminhada', cycle:'Aula de Cycle', cross:'Aula de Cross Training' };
+  const ans = prompt(`${names[q]}: quantos minutos?`, q==='walk' ? 30 : 30); if (ans === null) return;
+  const min = num(ans); if (!(min > 0)) return;
+  const kcal = kcalFor(MET[q], min);
+  (data.exercise[dayKey()] ||= []).push({ name:names[q], min, kcal, est:true, t:Date.now() });
+  save(); renderAll(); alert(`Registado: ${names[q]}, ${min} min, ~${kcal} kcal (estimado).`);
+});
+
+function startRest(sec) {
+  clearInterval(restTimer); let left = sec;
+  $('restBar').style.display = 'flex';
+  const tick = () => {
+    $('restTxt').textContent = left > 0 ? `⏱ Pausa: ${left} s` : '💪 Próxima série!';
+    if (left === 0) { try { navigator.vibrate && navigator.vibrate([200,100,200]); } catch {} }
+    if (left < -3) { clearInterval(restTimer); $('restBar').style.display = 'none'; }
+    left--;
+  };
+  tick(); restTimer = setInterval(tick, 1000);
+}
+$('restStop').onclick = () => { clearInterval(restTimer); $('restBar').style.display = 'none'; };
+
+function renderTrWeek() {
+  const opts = [...Object.keys(data.workouts), 'L', 'R'];
+  const order = [1,2,3,4,5,6,0];
+  $('trWeek').innerHTML = order.map(d => {
+    const cls = Object.values(CLASSES).filter(c => c.times[d]).map(c => `${c.name} ${c.times[d].join(', ')}`).join(' · ');
+    return `<div style="margin-bottom:10px"><label style="margin:0 0 4px">${WD[d]}${cls?` <small>· ${esc(cls)}</small>`:''}</label>
+      <select data-wd="${d}">${opts.map(o=>`<option value="${o}" ${data.weekPlan[d]===o?'selected':''}>${esc(wLabel(o))}</option>`).join('')}</select></div>`;
+  }).join('') + '<p class="note">O treino de hoje que ainda não começaste muda logo; os dias já registados ficam como estão.</p>';
+  $('trWeek').querySelectorAll('[data-wd]').forEach(sel => sel.onchange = () => {
+    data.weekPlan[sel.dataset.wd] = sel.value;
+    const ses = data.sessions[dayKey()];
+    if (+sel.dataset.wd === new Date().getDay() && ses && !ses.finished && !ses.done.length) delete data.sessions[dayKey()];
+    save(); renderTreino();
+  });
+}
+function renderTrEdit() {
+  const openIds = [...$('trEdit').querySelectorAll('details[open]')].map(d => d.dataset.id);
+  $('trEdit').innerHTML = Object.entries(data.workouts).map(([id,w]) => `<details class="mday" data-id="${id}" ${openIds.includes(id)?'open':''}><summary class="mday-btn">${esc(id)} – ${esc(w.name)}</summary>
+    <div class="mday-body">
+      <label style="margin-top:0">Nome do treino</label><input data-wn="${id}" value="${esc(w.name)}">
+      <p class="note">Por ordem de prioridade. Em cada exercício: séries · repetições · pausa (segundos).</p>
+      ${w.items.map((it,i) => it.cls
+        ? `<div class="edit-ex"><input value="${esc(it.name)}" data-f="name" data-w="${id}" data-i="${i}"><span class="muted" style="grid-column:span 2;font-size:13px">aula · minutos:</span><input value="${it.min}" data-f="min" data-w="${id}" data-i="${i}" inputmode="numeric"><button class="x" data-del="${id}:${i}">✕</button></div>`
+        : `<div class="edit-ex"><input value="${esc(it.name)}" data-f="name" data-w="${id}" data-i="${i}"><input value="${it.sets}" data-f="sets" data-w="${id}" data-i="${i}" inputmode="numeric"><input value="${esc(it.reps)}" data-f="reps" data-w="${id}" data-i="${i}"><input value="${it.rest}" data-f="rest" data-w="${id}" data-i="${i}" inputmode="numeric"><button class="x" data-del="${id}:${i}">✕</button></div>`).join('')}
+      <div class="row"><button class="secondary" data-add="${id}">+ Exercício</button></div>
+    </div></details>`).join('') + `<div class="row"><button class="secondary danger" id="trReset">Repor treinos originais</button></div>`;
+  const E = $('trEdit');
+  E.querySelectorAll('[data-wn]').forEach(inp => inp.onchange = () => { data.workouts[inp.dataset.wn].name = inp.value.trim() || data.workouts[inp.dataset.wn].name; save(); renderTreino(); });
+  E.querySelectorAll('[data-f]').forEach(inp => inp.onchange = () => {
+    const it = data.workouts[inp.dataset.w].items[+inp.dataset.i], f = inp.dataset.f;
+    it[f] = ['sets','rest','min'].includes(f) ? (Math.max(0, Math.round(num(inp.value)||0)) || it[f]) : inp.value.trim();
+    save(); renderTreino();
+  });
+  E.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { const [id,i] = b.dataset.del.split(':');
+    if (confirm('Tirar este exercício do treino?')) { data.workouts[id].items.splice(+i,1); save(); renderTreino(); } });
+  E.querySelectorAll('[data-add]').forEach(b => b.onclick = () => { const n = prompt('Nome do exercício:'); if (!n) return;
+    data.workouts[b.dataset.add].items.push({ name:n.trim(), sets:3, reps:'12', rest:60 }); save(); renderTreino(); });
+  $('trReset').onclick = () => { if (confirm('Repor os treinos A, B, C e D originais? As tuas alterações aos exercícios perdem-se.')) { data.workouts = defaultWorkouts(); save(); renderTreino(); } };
+}
+
 /* ---------- arranque ---------- */
-function renderAll(){ applyAuto(); renderHoje(); renderAutoInfo(); renderComida(); renderPassos(); renderCorpo(); renderReceitas(); }
+function renderAll(){ applyAuto(); renderHoje(); renderAutoInfo(); renderComida(); renderTreino(); renderPassos(); renderCorpo(); renderReceitas(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAll(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 renderAll();
