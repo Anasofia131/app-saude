@@ -120,6 +120,9 @@
   <div class="card">
     <h2>Resumo do dia</h2>
     <div class="stat"><div class="lbl">Calorias</div><div class="bar" style="background:var(--food-soft)"><i id="sKcalBar" style="background:var(--food)"></i></div><div class="num" id="sKcal"></div></div>
+    <div class="stat"><div class="lbl">Proteína</div><div class="bar" style="background:var(--body-soft)"><i id="sPBar" style="background:var(--body)"></i></div><div class="num" id="sP"></div></div>
+    <div class="stat"><div class="lbl">Hidratos</div><div class="bar" style="background:var(--food-soft)"><i id="sCBar" style="background:var(--food)"></i></div><div class="num" id="sC"></div></div>
+    <div class="stat"><div class="lbl">Gordura</div><div class="bar" style="background:var(--water-soft)"><i id="sFBar" style="background:var(--water)"></i></div><div class="num" id="sF"></div></div>
     <div class="stat"><div class="lbl">Água</div><div class="bar" style="background:var(--water-soft)"><i id="sWaterBar" style="background:var(--water)"></i></div><div class="num" id="sWater"></div></div>
     <div class="stat"><div class="lbl">Passos</div><div class="bar" style="background:var(--steps-soft)"><i id="sStepsBar" style="background:var(--steps)"></i></div><div class="num" id="sSteps"></div></div>
   </div>
@@ -160,7 +163,13 @@
       <div><label for="gWater">Água (ml/dia)</label><input type="number" id="gWater" inputmode="numeric"></div>
       <div><label for="gKcal">Calorias (kcal/dia)</label><input type="number" id="gKcal" inputmode="numeric"></div>
       <div><label for="gSteps">Passos (por dia)</label><input type="number" id="gSteps" inputmode="numeric"></div>
+      <div><label for="gP">Proteína (g/dia)</label><input type="number" id="gP" inputmode="numeric"></div>
+      <div><label for="gC">Hidratos (g/dia)</label><input type="number" id="gC" inputmode="numeric"></div>
+      <div><label for="gF">Gordura (g/dia)</label><input type="number" id="gF" inputmode="numeric"></div>
     </div>
+    <label style="display:flex;align-items:center;gap:10px;margin-top:14px;color:var(--text)">
+      <input type="checkbox" id="gCountEx" style="width:22px;height:22px;flex:0 0 22px"> Somar as calorias do exercício ao objetivo do dia</label>
+    <div class="row"><button class="food" id="openCalc">Calcular objetivo pelo peso</button></div>
     <div class="row">
       <button class="secondary" id="export">Exportar cópia</button>
       <button class="secondary" id="import">Importar cópia</button>
@@ -176,13 +185,14 @@
   <div class="card center">
     <div class="big" id="fTotal">0 kcal</div>
     <div class="muted" id="fGoal"></div>
+    <div class="muted" id="fMacros" style="margin-top:8px;font-weight:600"></div>
   </div>
   <div id="meals"></div>
 </section>
 
 <!-- ============ PASSOS ============ -->
 <section class="tab" id="tab-passos">
-  <header><h1>Passos</h1><div class="date" id="stepsDayLbl"></div></header>
+  <header><h1>Atividade</h1><div class="date" id="stepsDayLbl"></div></header>
   <div class="card center">
     <div class="big" id="stToday">0</div>
     <div class="muted" id="stGoal"></div>
@@ -194,12 +204,24 @@
     <p class="note" id="stUpdated"></p>
   </div>
   <div class="card">
-    <h2>Últimos 7 dias</h2>
+    <div class="meal-head"><h2>Exercício de hoje</h2><span class="meal-kcal" id="exTotal">0 kcal</span></div>
+    <ul class="list" id="exList"></ul>
+    <label for="exName">Exercício</label><input id="exName" placeholder="Ex.: Ginásio – pernas" list="exNames">
+    <datalist id="exNames"></datalist>
+    <div class="grid2">
+      <div><label for="exMin">Minutos</label><input id="exMin" type="number" inputmode="numeric"></div>
+      <div><label for="exKcal">Calorias gastas</label><input id="exKcal" type="number" inputmode="numeric"></div>
+    </div>
+    <div class="row"><button class="steps" id="exAdd">+ Adicionar exercício</button></div>
+    <p class="note">As calorias gastas vêm do relógio, do Strava ou da máquina do ginásio. Se usares o Atalho, as calorias ativas da app Saúde entram sozinhas: nesse caso não repitas aqui as caminhadas do Strava, para não contar a dobrar.</p>
+  </div>
+  <div class="card">
+    <h2>Passos · últimos 7 dias</h2>
     <div class="week" id="stWeek"></div>
   </div>
   <div class="card">
     <h2>Como funciona</h2>
-    <p class="note" style="margin-top:0">O Atalho "Passos Saúde" lê os passos e os km de hoje da app Saúde (onde também ficam as caminhadas do Strava) e copia-os. Depois tocas em <b>Colar do Atalho</b>.</p>
+    <p class="note" style="margin-top:0">O Atalho "Passos Saúde" lê os passos, os km e as calorias ativas de hoje da app Saúde (onde também ficam as caminhadas do Strava) e copia-os. Depois tocas em <b>Colar do Atalho</b>.</p>
   </div>
 </section>
 
@@ -244,7 +266,7 @@
 <nav>
   <button data-tab="hoje" class="active"><span class="ic">🏠</span>Hoje</button>
   <button data-tab="comida"><span class="ic">🍽️</span>Comida</button>
-  <button data-tab="passos"><span class="ic">👟</span>Passos</button>
+  <button data-tab="passos"><span class="ic">👟</span>Atividade</button>
   <button data-tab="corpo"><span class="ic">📏</span>Corpo</button>
   <button data-tab="receitas"><span class="ic">🥗</span>Receitas</button>
 </nav>
@@ -271,6 +293,38 @@
   <div class="row"><button class="secondary danger" id="rDelete">Apagar receita</button></div>
 </div>
 
+<!-- ============ FOLHA: calculadora ============ -->
+<div class="sheet" id="cSheet">
+  <div class="sheet-top"><h2>Calcular objetivo</h2><button class="x" id="cClose">✕</button></div>
+  <div class="grid2">
+    <div><label for="cSex">Sexo</label><select id="cSex"><option value="f">Mulher</option><option value="m">Homem</option></select></div>
+    <div><label for="cAge">Idade</label><input id="cAge" type="number" inputmode="numeric"></div>
+    <div><label for="cHeight">Altura (cm)</label><input id="cHeight" type="number" inputmode="numeric"></div>
+    <div><label for="cWeight">Peso atual (kg)</label><input id="cWeight" type="number" step="0.1" inputmode="decimal"></div>
+  </div>
+  <label for="cAct">Nível de atividade (sem contar o exercício que registas)</label>
+  <select id="cAct">
+    <option value="1.2">Sedentária (trabalho sentada)</option>
+    <option value="1.375">Pouco ativa (1–3 treinos/semana)</option>
+    <option value="1.55">Moderada (3–5 treinos/semana)</option>
+    <option value="1.725">Muito ativa (6–7 treinos/semana)</option>
+  </select>
+  <div class="grid2">
+    <div><label for="cTarget">Peso que queres (kg)</label><input id="cTarget" type="number" step="0.1" inputmode="decimal"></div>
+    <div><label for="cRate">Ritmo</label><select id="cRate">
+      <option value="0.25">0,25 kg/semana</option><option value="0.5" selected>0,5 kg/semana</option><option value="0.75">0,75 kg/semana</option></select></div>
+  </div>
+  <h2 style="margin-top:16px">Divisão dos macros (%)</h2>
+  <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+    <div><label for="cP">Proteína</label><input id="cP" type="number" inputmode="numeric" value="30"></div>
+    <div><label for="cC">Hidratos</label><input id="cC" type="number" inputmode="numeric" value="40"></div>
+    <div><label for="cF">Gordura</label><input id="cF" type="number" inputmode="numeric" value="30"></div>
+  </div>
+  <div class="card" style="background:var(--bg);margin-top:14px" id="cResult"></div>
+  <div class="row"><button class="food" id="cApply">Usar estes objetivos</button></div>
+  <p class="note">Estimativa com a fórmula de Mifflin-St Jeor e a regra de cerca de 7700 kcal por kg. É um ponto de partida, não um plano médico: ajusta conforme a tua evolução ou com um nutricionista.</p>
+</div>
+
 <script src="scanner.js"></script>
 <script>
 /* ---------- dados ---------- */
@@ -279,7 +333,8 @@ const MEALS = ['Pequeno-almoço','Almoço','Lanche','Jantar','Ceia'];
 const MEASURES = [['weight','Peso','kg'],['waist','Cintura','cm'],['hip','Anca','cm'],['chest','Peito','cm'],['arm','Braço','cm'],['thigh','Coxa','cm']];
 
 function blank() {
-  return { goal:2000, kcalGoal:2000, stepsGoal:8000, water:{}, meals:{}, foods:{}, steps:{}, measures:[], recipes:[] };
+  return { goal:2000, kcalGoal:2000, stepsGoal:8000, macroGoal:{p:150,c:200,f:67}, countExercise:true, profile:{},
+    water:{}, meals:{}, foods:{}, steps:{}, exercise:{}, measures:[], recipes:[] };
 }
 function load() {
   let d;
@@ -300,6 +355,12 @@ const wd = d => d.toLocaleDateString('pt-PT',{weekday:'short'}).slice(0,3);
 const waterSum = k => (data.water[k]||[]).reduce((a,e)=>a+e.ml,0);
 const kcalSum = k => (data.meals[k]||[]).reduce((a,e)=>a+e.kcal,0);
 const stepsOf = k => (data.steps[k]||{}).steps || 0;
+const macroSum = (k, m) => (data.meals[k]||[]).reduce((a,e)=>a+(e[m]||0),0);
+const burned = k => (data.exercise[k]||[]).reduce((a,e)=>a+(e.kcal||0),0);
+const kcalTarget = k => data.kcalGoal + (data.countExercise ? burned(k) : 0);
+const num = v => { const n = parseFloat(String(v ?? '').replace(',','.')); return isNaN(n) ? null : n; };
+const g1 = n => (Math.round(n*10)/10).toLocaleString('pt-PT');
+const macroTxt = o => `P ${g1(o.p||0)} g · H ${g1(o.c||0)} g · G ${g1(o.f||0)} g`;
 
 /* ---------- navegação ---------- */
 document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => {
@@ -326,8 +387,10 @@ function renderHoje() {
   $('todayLbl').textContent = new Date().toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
   const w = waterSum(k), kc = kcalSum(k), st = stepsOf(k);
   const bar = (id, v, g) => $(id).style.width = Math.min(v/g*100,100)+'%';
-  bar('sKcalBar',kc,data.kcalGoal); bar('sWaterBar',w,data.goal); bar('sStepsBar',st,data.stepsGoal);
-  $('sKcal').textContent = `${fmt(kc)} / ${fmt(data.kcalGoal)} kcal`;
+  const tgt = kcalTarget(k), mg = data.macroGoal;
+  bar('sKcalBar',kc,tgt); bar('sWaterBar',w,data.goal); bar('sStepsBar',st,data.stepsGoal);
+  $('sKcal').textContent = `${fmt(kc)} / ${fmt(tgt)} kcal`;
+  [['p','sP'],['c','sC'],['f','sF']].forEach(([m,id]) => { const v = macroSum(k,m); bar(id+'Bar',v,mg[m]); $(id).textContent = `${fmt(v)} / ${fmt(mg[m])} g`; });
   $('sWater').textContent = `${fmt(w)} / ${fmt(data.goal)} ml`;
   $('sSteps').textContent = `${fmt(st)} / ${fmt(data.stepsGoal)}`;
 
@@ -338,14 +401,16 @@ function renderHoje() {
   $('wStatus').textContent = w < data.goal ? `Faltam ${fmt(data.goal-w)} ml` : 'Objetivo cumprido 💧';
   weekChart($('wWeek'), waterSum, data.goal, 'var(--water)', 'var(--water-soft)', v => (v/1000).toFixed(1));
   $('gWater').value = data.goal; $('gKcal').value = data.kcalGoal; $('gSteps').value = data.stepsGoal;
+  $('gP').value = data.macroGoal.p; $('gC').value = data.macroGoal.c; $('gF').value = data.macroGoal.f; $('gCountEx').checked = data.countExercise;
 
   // treinador: só factos calculados a partir dos teus registos
   const tips = [];
   const h = new Date().getHours();
   if (w < data.goal) tips.push(`Água: faltam ${fmt(data.goal-w)} ml para o objetivo.`); else tips.push('Água: objetivo cumprido. 💧');
   if (kc === 0) tips.push('Comida: ainda não registaste nada hoje.');
-  else if (kc <= data.kcalGoal) tips.push(`Calorias: ainda tens ${fmt(data.kcalGoal-kc)} kcal até ao teu objetivo.`);
-  else tips.push(`Calorias: passaste ${fmt(kc-data.kcalGoal)} kcal acima do objetivo.`);
+  else if (kc <= tgt) tips.push(`Calorias: ainda tens ${fmt(tgt-kc)} kcal até ao teu objetivo${burned(k)&&data.countExercise?` (inclui ${fmt(burned(k))} kcal de exercício)`:''}.`);
+  else tips.push(`Calorias: passaste ${fmt(kc-tgt)} kcal acima do objetivo.`);
+  if (kc > 0) { const pr = macroSum(k,'p'); tips.push(pr < mg.p ? `Proteína: faltam ${fmt(mg.p-pr)} g.` : 'Proteína: objetivo cumprido. 💪'); }
   const missing = MEALS.slice(0,4).filter((m,i) => (data.meals[k]||[]).every(e=>e.meal!==m) && h >= [11,15,18,22][i]);
   if (missing.length) tips.push(`Por registar: ${missing.join(', ').toLowerCase()}.`);
   if (!data.steps[k]) tips.push('Passos: corre o Atalho e cola os passos de hoje.');
@@ -370,6 +435,8 @@ function addWater(ml) {
 document.querySelectorAll('[data-ml]').forEach(b => b.addEventListener('click', () => addWater(+b.dataset.ml)));
 $('wCustom').onclick = () => { const v = +prompt('Quantos ml?','250'); if (v>0 && v<5000) addWater(Math.round(v)); };
 $('wUndo').onclick = () => { const a = data.water[dayKey()]; if (a && a.length) { a.pop(); save(); renderHoje(); } };
+[['gP','p'],['gC','c'],['gF','f']].forEach(([id,m]) => $(id).addEventListener('change', e => { const v = Math.round(+e.target.value); if (v>=0 && v<=1000) { data.macroGoal[m]=v; save(); } renderAll(); }));
+$('gCountEx').onchange = e => { data.countExercise = e.target.checked; save(); renderAll(); };
 [['gWater','goal',250],['gKcal','kcalGoal',500],['gSteps','stepsGoal',500]].forEach(([id,key,min]) =>
   $(id).addEventListener('change', e => { const v = Math.round(+e.target.value); if (v>=min && v<=100000) { data[key]=v; save(); } renderAll(); }));
 
@@ -396,15 +463,16 @@ $('importFile').onchange = async e => {
 function renderComida() {
   const k = dayKey(), list = data.meals[k] || [];
   $('foodDayLbl').textContent = new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long'});
-  const tot = kcalSum(k);
+  const tot = kcalSum(k), tgt = kcalTarget(k);
   $('fTotal').textContent = `${fmt(tot)} kcal`;
-  $('fGoal').textContent = tot <= data.kcalGoal ? `Faltam ${fmt(data.kcalGoal-tot)} de ${fmt(data.kcalGoal)} kcal` : `${fmt(tot-data.kcalGoal)} kcal acima do objetivo`;
+  $('fGoal').textContent = tot <= tgt ? `Faltam ${fmt(tgt-tot)} de ${fmt(tgt)} kcal` : `${fmt(tot-tgt)} kcal acima do objetivo`;
+  $('fMacros').textContent = macroTxt({p:macroSum(k,'p'),c:macroSum(k,'c'),f:macroSum(k,'f')});
   $('meals').innerHTML = MEALS.map(m => {
     const items = list.map((e,i)=>({...e,i})).filter(e=>e.meal===m);
     const sum = items.reduce((a,e)=>a+e.kcal,0);
     return `<div class="card">
       <div class="meal-head"><h2>${m}</h2><span class="meal-kcal">${fmt(sum)} kcal</span></div>
-      <ul class="list">${items.map(e=>`<li><div class="name">${esc(e.name)}<small>${esc(e.qty)}</small></div>
+      <ul class="list">${items.map(e=>`<li><div class="name">${esc(e.name)}<small>${esc(e.qty)}${e.p!=null?' · '+macroTxt(e):''}</small></div>
         <span class="val">${fmt(e.kcal)} kcal</span><button class="x" data-del="${e.i}">✕</button></li>`).join('')}</ul>
       <div class="row"><button class="food" data-addmeal="${m}">+ Adicionar</button></div></div>`;
   }).join('');
@@ -422,17 +490,19 @@ function kcalFrom(n) {
   if (n['energy_100g'] != null) return +n['energy_100g']/4.184;
   return null;
 }
+const macrosFrom = n => ({ p100: n && n.proteins_100g!=null ? +n.proteins_100g : null,
+  c100: n && n.carbohydrates_100g!=null ? +n.carbohydrates_100g : null, f100: n && n.fat_100g!=null ? +n.fat_100g : null });
 async function offBarcode(code) {
   const r = await fetch(`${OFF}/api/v2/product/${encodeURIComponent(code)}.json?fields=code,product_name,product_name_pt,brands,nutriments`);
   const j = await r.json();
   if (j.status !== 1 || !j.product) return null;
   const p = j.product;
-  return { id:'b'+code, code, name:(p.product_name_pt||p.product_name||'Sem nome'), brand:p.brands||'', kcal100:kcalFrom(p.nutriments) };
+  return { id:'b'+code, code, name:(p.product_name_pt||p.product_name||'Sem nome'), brand:p.brands||'', kcal100:kcalFrom(p.nutriments), ...macrosFrom(p.nutriments) };
 }
 async function offSearch(q) {
   const r = await fetch(`${OFF}/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=20&fields=code,product_name,product_name_pt,brands,nutriments`);
   const j = await r.json();
-  return (j.products||[]).map(p => ({ id:'b'+p.code, code:p.code, name:(p.product_name_pt||p.product_name||''), brand:p.brands||'', kcal100:kcalFrom(p.nutriments) }))
+  return (j.products||[]).map(p => ({ id:'b'+p.code, code:p.code, name:(p.product_name_pt||p.product_name||''), brand:p.brands||'', kcal100:kcalFrom(p.nutriments), ...macrosFrom(p.nutriments) }))
     .filter(p => p.name && p.kcal100 != null);
 }
 
@@ -442,7 +512,7 @@ function openSheet(id){ $('sheetBg').classList.add('open'); $(id).classList.add(
 function closeSheet(id){ $(id).classList.remove('open'); if (!document.querySelector('.sheet.open')) $('sheetBg').classList.remove('open'); }
 async function stopScanner(){ if (scanner) { try { await scanner.stop(); } catch {} try { scanner.clear(); } catch {} scanner = null; } }
 $('sheetClose').onclick = async () => { await stopScanner(); closeSheet('sheet'); };
-$('sheetBg').onclick = async () => { await stopScanner(); closeSheet('sheet'); closeSheet('rSheet'); };
+$('sheetBg').onclick = async () => { await stopScanner(); closeSheet('sheet'); closeSheet('rSheet'); closeSheet('cSheet'); };
 
 function openPicker(opts) {
   pick = opts;
@@ -477,6 +547,11 @@ function showMode(mode) {
   if (mode==='manual') {
     html += `<label for="manName">Nome</label><input id="manName" placeholder="Ex.: Sopa de legumes">
       <label for="manKcal">Calorias por 100 g</label><input id="manKcal" type="number" inputmode="decimal">
+      <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+        <div><label for="manP">Proteína</label><input id="manP" type="number" inputmode="decimal" placeholder="g"></div>
+        <div><label for="manC">Hidratos</label><input id="manC" type="number" inputmode="decimal" placeholder="g"></div>
+        <div><label for="manF">Gordura</label><input id="manF" type="number" inputmode="decimal" placeholder="g"></div></div>
+      <p class="note">Macros por 100 g (opcional, vê no rótulo).</p>
       <p class="note">Se só souberes as calorias da dose toda, escreve-as aqui e no passo seguinte põe 100 g.</p>
       <div class="row"><button class="food" id="manGo">Continuar</button></div>`;
   }
@@ -507,7 +582,7 @@ function showMode(mode) {
     $('manGo').onclick = () => {
       const name = $('manName').value.trim(), k = +String($('manKcal').value).replace(',','.');
       if (!name || !(k>=0)) { alert('Preenche o nome e as calorias.'); return; }
-      askQty({ id:'m'+Date.now(), name, brand:'', kcal100:k });
+      askQty({ id:'m'+Date.now(), name, brand:'', kcal100:k, p100:num($('manP').value), c100:num($('manC').value), f100:num($('manF').value) });
     };
   }
 }
@@ -543,11 +618,16 @@ function askUnknown(code, name) {
   $('sheetBody').innerHTML = `<p class="muted">${name ? 'Este produto não tem calorias na base de dados.' : 'Este produto ainda não está na base de dados.'} Escreve os dados do rótulo uma vez e fica guardado.</p>
     <label for="uName">Nome</label><input id="uName" value="${esc(name)}">
     <label for="uKcal">Calorias por 100 g (ver rótulo)</label><input id="uKcal" type="number" inputmode="decimal">
+    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
+        <div><label for="uP">Proteína</label><input id="uP" type="number" inputmode="decimal" placeholder="g"></div>
+        <div><label for="uC">Hidratos</label><input id="uC" type="number" inputmode="decimal" placeholder="g"></div>
+        <div><label for="uF">Gordura</label><input id="uF" type="number" inputmode="decimal" placeholder="g"></div></div>
+      <p class="note">Macros por 100 g (opcional, vê no rótulo).</p>
     <div class="row"><button class="food" id="uGo">Continuar</button></div>`;
   $('uGo').onclick = () => {
     const n = $('uName').value.trim(), k = +String($('uKcal').value).replace(',','.');
     if (!n || !(k>=0)) { alert('Preenche o nome e as calorias.'); return; }
-    askQty({ id:'b'+code, code, name:n, brand:'', kcal100:k });
+    askQty({ id:'b'+code, code, name:n, brand:'', kcal100:k, p100:num($('uP').value), c100:num($('uC').value), f100:num($('uF').value) });
   };
 }
 
@@ -555,23 +635,27 @@ function askQty(food) {
   stopScanner();
   $('sheetBody').innerHTML = `<h2 style="margin:6px 0 2px">${esc(food.name)}</h2><div class="muted">${esc(food.brand||'')} · ${fmt(food.kcal100)} kcal por 100 g</div>
     <label for="qty">Quantidade (g ou ml)</label><input id="qty" type="number" inputmode="decimal" value="${food.lastQty||100}">
-    <div class="kcal-preview" id="qPrev"></div>
+    <div class="kcal-preview" id="qPrev"></div><div class="muted center" id="qMac"></div>
     <div class="row"><button class="food" id="qAdd">Adicionar</button></div>
     <div class="row"><button class="secondary" id="qBack">Voltar</button></div>`;
   const calc = () => (+String($('qty').value).replace(',','.')||0) * food.kcal100 / 100;
-  const upd = () => $('qPrev').textContent = `${fmt(calc())} kcal`;
+  const hasM = food.p100!=null || food.c100!=null || food.f100!=null;
+  const mac = g => ({ p:(food.p100||0)*g/100, c:(food.c100||0)*g/100, f:(food.f100||0)*g/100 });
+  const upd = () => { $('qPrev').textContent = `${fmt(calc())} kcal`;
+    $('qMac').textContent = hasM ? macroTxt(mac(+String($('qty').value).replace(',','.')||0)) : 'Sem macros na base de dados para este alimento.'; };
   $('qty').oninput = upd; upd(); $('qty').select();
   $('qBack').onclick = () => showMode('mine');
   $('qAdd').onclick = () => {
     const g = +String($('qty').value).replace(',','.');
     if (!(g>0)) { alert('Indica a quantidade.'); return; }
-    data.foods[food.id] = { id:food.id, code:food.code, name:food.name, brand:food.brand||'', kcal100:food.kcal100, used:Date.now(), lastQty:g };
+    data.foods[food.id] = { id:food.id, code:food.code, name:food.name, brand:food.brand||'', kcal100:food.kcal100,
+      p100:food.p100??null, c100:food.c100??null, f100:food.f100??null, used:Date.now(), lastQty:g };
     const kcal = g*food.kcal100/100;
     if (pick.target==='meal') {
-      (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:food.name, qty:`${fmt(g)} g`, kcal, t:Date.now() });
+      (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:food.name, qty:`${fmt(g)} g`, kcal, ...(hasM?mac(g):{}), t:Date.now() });
       save(); closeSheet('sheet'); renderAll();
     } else {
-      draft.items.push({ name:food.name, grams:g, kcal100:food.kcal100 });
+      draft.items.push({ name:food.name, grams:g, kcal100:food.kcal100, p100:food.p100??null, c100:food.c100??null, f100:food.f100??null });
       save(); closeSheet('sheet'); renderDraft();
     }
   };
@@ -587,12 +671,14 @@ function askRecipe(r) {
   $('por').oninput = upd; upd();
   $('pAdd').onclick = () => {
     const p = +String($('por').value).replace(',','.'); if (!(p>0)) return;
-    (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:r.name, qty:`${String(p).replace('.',',')} dose${p===1?'':'s'}`, kcal:p*per, t:Date.now() });
+    const rm = recipeMac(r);
+    (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:r.name, qty:`${String(p).replace('.',',')} dose${p===1?'':'s'}`, kcal:p*per, p:rm.p*p, c:rm.c*p, f:rm.f*p, t:Date.now() });
     save(); closeSheet('sheet'); renderAll();
   };
 }
 
-/* ---------- PASSOS ---------- */
+/* ---------- ATIVIDADE (passos + exercício) ---------- */
+const AUTO = 'Atividade (app Saúde)';
 function renderPassos() {
   const k = dayKey(), s = data.steps[k];
   $('stepsDayLbl').textContent = new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long'});
@@ -601,24 +687,101 @@ function renderPassos() {
   $('stKm').textContent = s && s.km ? `${s.km.toFixed(2).replace('.',',')} km a andar/correr` : '';
   $('stUpdated').textContent = s ? `Atualizado às ${new Date(s.t).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}` : 'Ainda sem passos hoje.';
   weekChart($('stWeek'), stepsOf, data.stepsGoal, 'var(--steps)', 'var(--steps-soft)', v => (v/1000).toFixed(1)+'k');
+  // exercício
+  const ex = data.exercise[k] || [];
+  $('exTotal').textContent = `${fmt(burned(k))} kcal`;
+  $('exList').innerHTML = ex.length ? ex.map((e,i)=>`<li><div class="name">${esc(e.name)}<small>${e.min?fmt(e.min)+' min':''}</small></div>
+    <span class="val">${fmt(e.kcal)} kcal</span><button class="x" data-exdel="${i}">✕</button></li>`).join('') : '<li class="muted">Sem exercício registado hoje.</li>';
+  $('exList').querySelectorAll('[data-exdel]').forEach(b => b.onclick = () => {
+    if (confirm('Apagar este exercício?')) { data.exercise[k].splice(+b.dataset.exdel,1); save(); renderAll(); }
+  });
+  const names = new Set(); Object.values(data.exercise).flat().forEach(e => { if (e.name !== AUTO) names.add(e.name); });
+  $('exNames').innerHTML = [...names].map(n=>`<option value="${esc(n)}">`).join('');
 }
+const intNum = v => { const d = String(v ?? '').split(/[.,]/)[0].replace(/\D/g,''); return d ? +d : NaN; };
+const decNum = v => parseFloat(String(v ?? '').trim().replace(',','.'));
 function setSteps(steps, km) {
   data.steps[dayKey()] = { steps:Math.round(steps), km: km||0, t:Date.now() }; save(); renderAll();
 }
-function parseNum(s) { return +String(s).trim().replace(/\s/g,'').replace(/\.(?=\d{3}(\D|$))/g,'').replace(',','.'); }
+function setActive(kcal) {
+  const k = dayKey(), list = (data.exercise[k] ||= []);
+  const i = list.findIndex(e => e.name === AUTO);
+  if (i >= 0) list[i].kcal = kcal; else list.push({ name:AUTO, min:0, kcal, t:Date.now() });
+}
 $('stPaste').onclick = async () => {
   let txt = '';
   try { txt = await navigator.clipboard.readText(); } catch {}
   if (!txt) txt = prompt('Cola aqui o texto do Atalho:') || '';
-  const parts = txt.split(';');
-  const st = parseNum(parts[0]), km = parts[1] ? parseNum(parts[1]) : 0;
-  if (!(st>=0) || isNaN(st)) { alert('Não reconheci os passos. Corre primeiro o Atalho "Passos Saúde".'); return; }
+  const parts = txt.trim().split(';');
+  // passos: inteiro (ignora separadores de milhares)
+  const st = +String(parts[0]||'').replace(/[^\d]/g,'');
+  const km = parts[1] ? decNum(parts[1]) : 0;
+  const act = parts[2] ? intNum(parts[2]) : NaN;
+  if (!parts[0] || isNaN(st)) { alert('Não reconheci os passos. Corre primeiro o Atalho "Passos Saúde".'); return; }
+  if (act >= 0) setActive(act);
   setSteps(st, isNaN(km)?0:km);
 };
 $('stManual').onclick = () => {
   const v = prompt('Quantos passos hoje?', stepsOf(dayKey()) || '');
-  if (v === null) return; const n = parseNum(v);
+  if (v === null) return; const n = +String(v).replace(/[^\d]/g,'');
   if (n>=0) setSteps(n, (data.steps[dayKey()]||{}).km);
+};
+$('exAdd').onclick = () => {
+  const name = $('exName').value.trim(), min = num($('exMin').value), kcal = num($('exKcal').value);
+  if (!name || !(kcal>=0) || kcal===null) { alert('Preenche o exercício e as calorias gastas.'); return; }
+  (data.exercise[dayKey()] ||= []).push({ name, min:min||0, kcal:Math.round(kcal), t:Date.now() });
+  $('exName').value = $('exMin').value = $('exKcal').value = '';
+  save(); renderAll();
+};
+
+/* ---------- CALCULADORA DO OBJETIVO ---------- */
+function calcResult() {
+  const sex = $('cSex').value, age = num($('cAge').value), h = num($('cHeight').value), w = num($('cWeight').value);
+  const act = +$('cAct').value, target = num($('cTarget').value), rate = +$('cRate').value;
+  const pc = [num($('cP').value)||0, num($('cC').value)||0, num($('cF').value)||0];
+  if (!(age>0 && h>0 && w>0 && target>0)) return null;
+  const bmr = 10*w + 6.25*h - 5*age + (sex==='m' ? 5 : -161);   // Mifflin-St Jeor
+  const tdee = bmr * act;
+  const dir = target < w ? -1 : target > w ? 1 : 0;
+  const delta = dir * rate * 7700 / 7;                            // ~7700 kcal por kg
+  const kcal = Math.round((tdee + delta) / 10) * 10;
+  const weeks = dir ? Math.abs(target - w) / rate : 0;
+  return { bmr, tdee, kcal, weeks, dir, pcSum: pc[0]+pc[1]+pc[2],
+    p: Math.round(kcal*pc[0]/100/4), c: Math.round(kcal*pc[1]/100/4), f: Math.round(kcal*pc[2]/100/9) };
+}
+function renderCalc() {
+  const r = calcResult();
+  if (!r) { $('cResult').innerHTML = '<span class="muted">Preenche idade, altura, peso atual e peso que queres.</span>'; $('cApply').disabled = true; return; }
+  const warn = [];
+  if (r.pcSum !== 100) warn.push(`A divisão dos macros soma ${r.pcSum}%, devia somar 100%.`);
+  if (r.kcal < r.bmr) warn.push('Este objetivo fica abaixo do teu metabolismo basal. Escolhe um ritmo mais lento ou fala com um nutricionista.');
+  $('cApply').disabled = r.pcSum !== 100;
+  const end = new Date(); end.setDate(end.getDate() + Math.round(r.weeks*7));
+  $('cResult').innerHTML = `
+    <div class="muted">Metabolismo basal: <b>${fmt(r.bmr)} kcal</b></div>
+    <div class="muted">Para manter o peso: <b>${fmt(r.tdee)} kcal</b></div>
+    <div class="big center" style="margin:10px 0 2px">${fmt(r.kcal)} kcal/dia</div>
+    <div class="center muted">${macroTxt(r)}</div>
+    ${r.dir ? `<div class="center muted" style="margin-top:6px">Chegas ao peso que queres por volta de ${end.toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'})} (cerca de ${Math.round(r.weeks)} semanas).</div>` : ''}
+    ${warn.map(x=>`<p class="note" style="color:var(--danger)">${esc(x)}</p>`).join('')}`;
+}
+$('openCalc').onclick = () => {
+  const pf = data.profile || {};
+  const lastW = data.measures.filter(m=>m.weight).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  $('cSex').value = pf.sex || 'f'; $('cAge').value = pf.age || ''; $('cHeight').value = pf.height || '';
+  $('cWeight').value = lastW ? lastW.weight : (pf.weight || ''); $('cAct').value = pf.act || '1.375';
+  $('cTarget').value = pf.target || ''; $('cRate').value = pf.rate || '0.5';
+  if (pf.pc) { $('cP').value = pf.pc[0]; $('cC').value = pf.pc[1]; $('cF').value = pf.pc[2]; }
+  renderCalc(); openSheet('cSheet');
+};
+['cSex','cAge','cHeight','cWeight','cAct','cTarget','cRate','cP','cC','cF'].forEach(id => $(id).addEventListener('input', renderCalc));
+$('cClose').onclick = () => closeSheet('cSheet');
+$('cApply').onclick = () => {
+  const r = calcResult(); if (!r) return;
+  data.profile = { sex:$('cSex').value, age:num($('cAge').value), height:num($('cHeight').value), weight:num($('cWeight').value),
+    act:$('cAct').value, target:num($('cTarget').value), rate:$('cRate').value, pc:[num($('cP').value),num($('cC').value),num($('cF').value)] };
+  data.kcalGoal = r.kcal; data.macroGoal = { p:r.p, c:r.c, f:r.f };
+  save(); closeSheet('cSheet'); renderAll();
 };
 
 /* ---------- CORPO ---------- */
@@ -664,10 +827,12 @@ $('mSave').onclick = () => {
 /* ---------- RECEITAS ---------- */
 let draft = null;
 const recipeKcal = r => r.items.reduce((a,i)=>a+i.grams*i.kcal100/100,0);
+const recipeMac = r => ['p','c','f'].reduce((o,m)=>(o[m]=r.items.reduce((a,i)=>a+i.grams*(i[m+'100']||0)/100,0)/r.portions,o),{});
 function renderReceitas() {
   $('rList').innerHTML = data.recipes.length ? data.recipes.map(r =>
     `<div class="card pick" data-ropen="${esc(r.id)}"><div class="meal-head"><h2>${esc(r.name)}</h2><span class="meal-kcal">${fmt(recipeKcal(r)/r.portions)} kcal/dose</span></div>
-     <div class="muted" style="margin-top:6px">${r.items.length} ingrediente${r.items.length===1?'':'s'} · ${r.portions} dose${r.portions===1?'':'s'}</div></div>`).join('')
+     <div class="muted" style="margin-top:6px">${macroTxt(recipeMac(r))} por dose</div>
+     <div class="muted" style="margin-top:2px">${r.items.length} ingrediente${r.items.length===1?'':'s'} · ${r.portions} dose${r.portions===1?'':'s'}</div></div>`).join('')
     : '<div class="card muted">Ainda não tens receitas.</div>';
   $('rList').querySelectorAll('[data-ropen]').forEach(c => c.onclick = () => openRecipe(data.recipes.find(r=>r.id===c.dataset.ropen)));
 }
@@ -683,7 +848,7 @@ function renderDraft() {
   $('rItems').innerHTML = draft.items.length ? draft.items.map((i,n)=>`<li><div class="name">${esc(i.name)}<small>${fmt(i.grams)} g</small></div>
     <span class="val">${fmt(i.grams*i.kcal100/100)} kcal</span><button class="x" data-idel="${n}">✕</button></li>`).join('') : '<li class="muted">Sem ingredientes.</li>';
   $('rItems').querySelectorAll('[data-idel]').forEach(b => b.onclick = () => { draft.items.splice(+b.dataset.idel,1); renderDraft(); });
-  $('rPerPortion').textContent = `${fmt(recipeKcal(draft)/draft.portions)} kcal`;
+  $('rPerPortion').textContent = `${fmt(recipeKcal(draft)/draft.portions)} kcal · ${macroTxt(recipeMac(draft))}`;
 }
 $('rNew').onclick = () => openRecipe(null);
 $('rClose').onclick = () => closeSheet('rSheet');
