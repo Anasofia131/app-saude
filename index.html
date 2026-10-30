@@ -241,8 +241,8 @@
 <!-- ============ CORPO ============ -->
 <section class="tab" id="tab-corpo">
   <header><h1>Corpo</h1></header>
-  <div class="card">
-    <h2>Nova medição</h2>
+  <div class="card" id="mForm">
+    <h2 id="mFormTitle">Nova medição</h2>
     <label for="mDate">Data</label><input type="date" id="mDate">
     <div class="grid2">
 <div><label for="mWeight">Peso (kg)</label><input type="text" inputmode="decimal" id="mWeight"></div>
@@ -257,6 +257,7 @@
       <div><label for="mChest">Peito (cm)</label><input type="text" inputmode="decimal" id="mChest"></div>
     </div>
     <div class="row"><button class="body" id="mSave">Guardar medição</button></div>
+    <div class="row" id="mCancelRow" style="display:none"><button class="secondary" id="mCancel">Cancelar edição</button></div>
   </div>
   <div class="card">
     <h2>Evolução do peso</h2>
@@ -867,11 +868,12 @@ function renderCorpo() {
       `<div class="mrow"><span>${esc(l)}</span><span><b>${String(m[k]).replace('.',',')}</b> ${esc(u)}</span></div>`).join('');
     return `<details class="mday"><summary class="mday-btn">${fd(m.date)}</summary>
       <div class="mday-body">${rows}
-        <div class="row"><button class="secondary danger" data-mdel="${esc(m.date)}">Apagar esta medição</button></div></div></details>`;
+        <div class="row"><button class="body" data-medit="${esc(m.date)}">Editar</button><button class="secondary danger" data-mdel="${esc(m.date)}">Apagar</button></div></div></details>`;
   }).join('') : '<p class="muted">Ainda sem medições.</p>';
   $('mList').querySelectorAll('[data-mdel]').forEach(b => b.onclick = () => {
-    if (confirm('Apagar esta medição?')) { data.measures = data.measures.filter(m=>m.date!==b.dataset.mdel); save(); renderCorpo(); }
+    if (confirm('Apagar esta medição?')) { data.measures = data.measures.filter(m=>m.date!==b.dataset.mdel); if (editingDate===b.dataset.mdel) endEdit(); save(); renderCorpo(); }
   });
+  $('mList').querySelectorAll('[data-medit]').forEach(b => b.onclick = () => startEdit(b.dataset.medit));
   // gráfico do peso
   const pts = data.measures.filter(m=>m.weight).sort((a,b)=>a.date.localeCompare(b.date));
   if (pts.length < 2) { $('mChart').innerHTML = '<p class="muted">O gráfico aparece a partir de duas medições de peso.</p>'; return; }
@@ -886,17 +888,44 @@ function renderCorpo() {
     <text x="${W-P}" y="${H-6}" text-anchor="end">${t1.toLocaleDateString('pt-PT',{day:'numeric',month:'short'})}</text>
     <text x="4" y="${P}">${mx.toFixed(1)}</text><text x="4" y="${H-P}">${mn.toFixed(1)}</text></svg>`;
 }
+let editingDate = null;
+const mId = k => 'm'+k[0].toUpperCase()+k.slice(1);
+function startEdit(date) {
+  const m = data.measures.find(x=>x.date===date); if (!m) return;
+  editingDate = date;
+  $('mDate').value = m.date;
+  MEASURES.forEach(([k]) => $(mId(k)).value = m[k]!=null ? String(m[k]).replace('.',',') : '');
+  $('mFormTitle').textContent = 'Editar medição';
+  $('mSave').textContent = 'Guardar alterações';
+  $('mCancelRow').style.display = '';
+  $('mForm').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+function endEdit() {
+  editingDate = null;
+  $('mFormTitle').textContent = 'Nova medição';
+  $('mSave').textContent = 'Guardar medição';
+  $('mCancelRow').style.display = 'none';
+  MEASURES.forEach(([k]) => $(mId(k)).value = '');
+  $('mDate').value = dayKey();
+}
+$('mCancel').onclick = endEdit;
 $('mSave').onclick = () => {
   const m = { date: $('mDate').value || dayKey() }; let any = false;
   for (const [k] of MEASURES) {
-    const id = 'm'+k[0].toUpperCase()+k.slice(1), v = parseFloat(String($(id).value).replace(',','.'));
+    const v = parseFloat(String($(mId(k)).value).replace(',','.'));
     if (v>0) { m[k]=v; any=true; }
   }
   if (!any) { alert('Preenche pelo menos uma medida.'); return; }
-  const old = data.measures.find(x=>x.date===m.date);
-  if (old) Object.assign(old, m); else data.measures.push(m);
+  if (editingDate) {
+    // substitui a medição editada (permite apagar campos e mudar a data)
+    data.measures = data.measures.filter(x => x.date!==editingDate && x.date!==m.date);
+    data.measures.push(m);
+  } else {
+    const old = data.measures.find(x=>x.date===m.date);
+    if (old) Object.assign(old, m); else data.measures.push(m);
+  }
   save();
-  MEASURES.forEach(([k]) => $('m'+k[0].toUpperCase()+k.slice(1)).value = '');
+  endEdit();
   renderAll();
 };
 
