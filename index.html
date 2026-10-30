@@ -232,12 +232,16 @@
     <h2>Nova medição</h2>
     <label for="mDate">Data</label><input type="date" id="mDate">
     <div class="grid2">
-      <div><label for="mWeight">Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" id="mWeight"></div>
+<div><label for="mWeight">Peso (kg)</label><input type="number" step="0.1" inputmode="decimal" id="mWeight"></div>
+      <div><label for="mFat">Gordura (%)</label><input type="number" step="0.1" inputmode="decimal" id="mFat"></div>
+      <div><label for="mBasal">Basal (kcal)</label><input type="number" step="0.1" inputmode="decimal" id="mBasal"></div>
+      <div><label for="mVisceral">Visceral (nível)</label><input type="number" step="0.1" inputmode="decimal" id="mVisceral"></div>
       <div><label for="mWaist">Cintura (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mWaist"></div>
+      <div><label for="mAbdomen">Abdómen (umbigo) (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mAbdomen"></div>
       <div><label for="mHip">Anca (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mHip"></div>
-      <div><label for="mChest">Peito (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mChest"></div>
-      <div><label for="mArm">Braço (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mArm"></div>
       <div><label for="mThigh">Coxa (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mThigh"></div>
+      <div><label for="mArm">Braço (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mArm"></div>
+      <div><label for="mChest">Peito (cm)</label><input type="number" step="0.1" inputmode="decimal" id="mChest"></div>
     </div>
     <div class="row"><button class="body" id="mSave">Guardar medição</button></div>
   </div>
@@ -330,7 +334,7 @@
 /* ---------- dados ---------- */
 const KEY = 'saude-v1';
 const MEALS = ['Pequeno-almoço','Almoço','Lanche','Jantar','Ceia'];
-const MEASURES = [['weight','Peso','kg'],['waist','Cintura','cm'],['hip','Anca','cm'],['chest','Peito','cm'],['arm','Braço','cm'],['thigh','Coxa','cm']];
+const MEASURES = [['weight','Peso','kg'],['fat','Gordura','%'],['basal','Basal','kcal'],['visceral','Visceral','nível'],['waist','Cintura','cm'],['abdomen','Abdómen (umbigo)','cm'],['hip','Anca','cm'],['thigh','Coxa','cm'],['arm','Braço','cm'],['chest','Peito','cm']];
 
 function blank() {
   return { goal:2000, kcalGoal:2000, stepsGoal:8000, macroGoal:{p:150,c:200,f:67}, countExercise:true, profile:{},
@@ -537,8 +541,8 @@ function showMode(mode) {
       : `<p class="muted">Ainda não tens receitas. Cria-as no separador Receitas.</p>`;
   }
   if (mode==='scan') {
-    html += `<div id="reader"></div><p class="muted center" id="scanMsg">A abrir a câmara…</p>
-      <div class="row"><button class="food" id="photoBtn">📷 Tirar foto ao código</button></div>
+    html += `<div class="row" style="margin-top:0;margin-bottom:10px"><button class="food" id="photoBtn">📷 Tirar foto ao código</button></div>
+      <div id="reader"></div><p class="muted center" id="scanMsg">A abrir a câmara…</p>
       <input type="file" id="photoIn" accept="image/*" capture="environment" hidden>
       <label for="codeIn">Ou escreve o código</label>
       <div class="row" style="margin-top:0"><input id="codeIn" inputmode="numeric" placeholder="5601234567890"><button class="food" id="codeGo" style="flex:0 0 90px">Procurar</button></div>`;
@@ -609,11 +613,18 @@ async function startScanner() {
   if (!window.Html5Qrcode) { if ($('scanMsg')) $('scanMsg').textContent = 'Leitor indisponível. Escreve o código à mão.'; return; }
   try {
     const F = Html5QrcodeSupportedFormats;
-    scanner = new Html5Qrcode('reader', { formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E], verbose:false });
-    await scanner.start({ facingMode:'environment' }, { fps:10, qrbox:{ width:250, height:120 } }, async code => {
-      await stopScanner(); lookup(code);
-    }, () => {});
-    if ($('scanMsg')) $('scanMsg').textContent = 'Aponta para o código de barras.';
+    scanner = new Html5Qrcode('reader', { formatsToSupport:[F.EAN_13,F.EAN_8,F.UPC_A,F.UPC_E], verbose:false,
+      experimentalFeatures:{ useBarCodeDetectorIfSupported:true } });
+    let done = false;
+    await scanner.start(
+      { facingMode:'environment' },
+      { fps:15,
+        // zona de leitura larga, ocupa quase toda a largura da imagem
+        qrbox: (w, h) => ({ width: Math.floor(w*0.9), height: Math.floor(Math.min(h*0.5, w*0.45)) }),
+        videoConstraints: { facingMode:'environment', width:{ ideal:1920 }, height:{ ideal:1080 }, advanced:[{ focusMode:'continuous' }] } },
+      async code => { if (done) return; done = true; await stopScanner(); lookup(String(code).trim()); },
+      () => {});
+    if ($('scanMsg')) $('scanMsg').textContent = 'Põe o código na horizontal, a 15–20 cm, com boa luz. Se não ler em 5 segundos, usa "Tirar foto ao código".';
   } catch (e) {
     if ($('scanMsg')) $('scanMsg').textContent = 'A câmara em direto não está disponível. Usa "Tirar foto ao código" ou escreve o código.';
   }
