@@ -121,6 +121,14 @@
   .mrow { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:15px; }
   .mrow:last-of-type { border-bottom:0; }
   .mrow span:first-child { color:var(--muted); }
+  .daynav { display:flex; align-items:center; gap:2px; }
+  .daynav button { background:none; color:var(--muted); font-size:24px; padding:2px 8px; font-weight:400; }
+  .daynav button:disabled { opacity:.25; }
+  .dn-lbl { position:relative; margin:0; font-size:14px; color:var(--muted); padding:4px 2px; text-align:center; }
+  .dn-lbl.past { color:var(--food); font-weight:700; }
+  .dn-in { position:absolute; inset:0; opacity:0; width:100%; height:100%; border:0; padding:0; }
+  .backtoday { display:none; margin:-8px 0 12px; }
+  .backtoday.show { display:block; }
   .ex { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
   .ex:last-child { border-bottom:0; }
   .ex .chk { width:30px; height:30px; flex:0 0 30px; border-radius:50%; border:2px solid var(--line); background:none; padding:0; font-size:16px; color:#fff; }
@@ -153,7 +161,8 @@
 
 <!-- ============ HOJE ============ -->
 <section class="tab active" id="tab-hoje">
-  <header><h1>Hoje</h1><div class="date" id="todayLbl"></div></header>
+  <header><h1 id="hojeTitle">Hoje</h1><div class="daynav"><button data-dn="-1" aria-label="Dia anterior">‹</button><label class="dn-lbl"><span class="dn-txt"></span><input type="date" class="dn-in"></label><button data-dn="1" aria-label="Dia seguinte">›</button></div></header>
+  <button class="secondary backtoday" style="width:100%;padding:9px">← Voltar a hoje</button>
 
   <div class="card">
     <h2>Resumo do dia</h2>
@@ -193,6 +202,10 @@
   <div class="card">
     <h2>Água · últimos 7 dias</h2>
     <div class="week" id="wWeek"></div>
+    <details class="hist" style="margin-top:14px">
+      <summary class="hist-main" style="background:var(--water-soft);color:var(--water)">Histórico da água</summary>
+      <div id="wHist" style="margin-top:12px"></div>
+    </details>
   </div>
 
   <div class="card">
@@ -222,7 +235,8 @@
 
 <!-- ============ COMIDA ============ -->
 <section class="tab" id="tab-comida">
-  <header><h1>Comida</h1><div class="date" id="foodDayLbl"></div></header>
+  <header><h1>Comida</h1><div class="daynav"><button data-dn="-1" aria-label="Dia anterior">‹</button><label class="dn-lbl"><span class="dn-txt"></span><input type="date" class="dn-in"></label><button data-dn="1" aria-label="Dia seguinte">›</button></div></header>
+  <button class="secondary backtoday" style="width:100%;padding:9px">← Voltar a hoje</button>
   <div class="card center">
     <div class="big" id="fTotal">0 kcal</div>
     <div class="muted" id="fGoal"></div>
@@ -233,7 +247,8 @@
 
 <!-- ============ TREINO ============ -->
 <section class="tab" id="tab-treino">
-  <header><h1>Treino</h1><div class="date" id="trDayLbl"></div></header>
+  <header><h1>Treino</h1><div class="daynav"><button data-dn="-1" aria-label="Dia anterior">‹</button><label class="dn-lbl"><span class="dn-txt"></span><input type="date" class="dn-in"></label><button data-dn="1" aria-label="Dia seguinte">›</button></div></header>
+  <button class="secondary backtoday" style="width:100%;padding:9px">← Voltar a hoje</button>
   <div id="trMain"></div>
   <div class="card">
     <h2>Hoje fiz outra coisa</h2>
@@ -265,7 +280,8 @@
 
 <!-- ============ PASSOS ============ -->
 <section class="tab" id="tab-passos">
-  <header><h1>Atividade</h1><div class="date" id="stepsDayLbl"></div></header>
+  <header><h1>Atividade</h1><div class="daynav"><button data-dn="-1" aria-label="Dia anterior">‹</button><label class="dn-lbl"><span class="dn-txt"></span><input type="date" class="dn-in"></label><button data-dn="1" aria-label="Dia seguinte">›</button></div></header>
+  <button class="secondary backtoday" style="width:100%;padding:9px">← Voltar a hoje</button>
   <div class="card center">
     <div class="big" id="stToday">0</div>
     <div class="muted" id="stGoal"></div>
@@ -277,16 +293,9 @@
     <p class="note" id="stUpdated"></p>
   </div>
   <div class="card">
-    <div class="meal-head"><h2>Exercício de hoje</h2><span class="meal-kcal" id="exTotal">0 kcal</span></div>
+    <div class="meal-head"><h2>Exercício do dia</h2><span class="meal-kcal" id="exTotal">0 kcal</span></div>
     <ul class="list" id="exList"></ul>
-    <label for="exName">Exercício</label><input id="exName" placeholder="Ex.: Ginásio – pernas" list="exNames">
-    <datalist id="exNames"></datalist>
-    <div class="grid2">
-      <div><label for="exMin">Minutos</label><input id="exMin" type="text" inputmode="numeric"></div>
-      <div><label for="exKcal">Calorias gastas</label><input id="exKcal" type="text" inputmode="numeric"></div>
-    </div>
-    <div class="row"><button class="steps" id="exAdd">+ Adicionar exercício</button></div>
-    <p class="note">As calorias gastas vêm do relógio, do Strava ou da máquina do ginásio. Se usares o Atalho, as calorias ativas da app Saúde entram sozinhas: nesse caso não repitas aqui as caminhadas do Strava, para não contar a dobrar.</p>
+    <p class="note">Os treinos e as aulas registam-se no separador Treino. As caminhadas entram pelo Atalho.</p>
   </div>
   <div class="card">
     <h2>Importar do Strava</h2>
@@ -316,10 +325,19 @@
   <header><h1>Corpo</h1></header>
   <div class="card">
     <h2>Os teus dados</h2>
-    <div class="grid2" style="grid-template-columns:1fr 1fr 1fr">
-      <div><label for="pSex">Sexo</label><select id="pSex"><option value="f">Mulher</option><option value="m">Homem</option></select></div>
-      <div><label for="pAge">Idade</label><input id="pAge" type="text" inputmode="numeric"></div>
-      <div><label for="pHeight">Altura (cm)</label><input id="pHeight" type="text" inputmode="numeric"></div>
+    <div id="pView" class="meal-head" style="display:none;background:var(--bg);border-radius:12px;padding:12px 14px">
+      <div><b id="pViewName"></b><div class="muted" id="pViewTxt" style="margin-top:2px"></div></div>
+      <button class="link" id="pEdit">Editar</button>
+    </div>
+    <div id="pFields">
+      <label for="pName">Nome</label><input id="pName" autocomplete="given-name">
+      <div class="grid2" style="grid-template-columns:1fr 1.3fr 1fr">
+        <div><label for="pSex">Sexo</label><select id="pSex"><option value="f">Mulher</option><option value="m">Homem</option></select></div>
+        <div><label for="pBirth">Data de nascimento</label><input id="pBirth" type="date"></div>
+        <div><label for="pHeight">Altura (cm)</label><input id="pHeight" type="text" inputmode="numeric"></div>
+      </div>
+      <input id="pAge" type="hidden">
+      <div class="row"><button class="body" id="pLock">Guardar os meus dados</button></div>
     </div>
     <label for="pAct">Nível de atividade</label>
     <select id="pAct">
@@ -345,7 +363,8 @@
     <p class="note">Com estes dados e o último peso registado, a app calcula sozinha as calorias, os macros e a água (Hoje → Definições).</p>
   </div>
   <div class="card" id="mForm">
-    <h2 id="mFormTitle">Nova medição</h2>
+    <details id="mFormBox"><summary class="hist-main" style="background:var(--body-soft);color:var(--body)"><span id="mFormTitle">Nova medição</span></summary>
+    <div style="margin-top:6px">
     <label for="mDate">Data</label><input type="date" id="mDate">
     <div class="grid2">
 <div><label for="mWeight">Peso (kg)</label><input type="text" inputmode="decimal" id="mWeight"></div>
@@ -362,6 +381,7 @@
     </div>
     <div class="row"><button class="body" id="mSave">Guardar medição</button></div>
     <div class="row" id="mCancelRow" style="display:none"><button class="secondary" id="mCancel">Cancelar edição</button></div>
+    </div></details>
   </div>
   <div class="card">
     <h2>Evolução do peso</h2>
@@ -511,10 +531,34 @@ function weekChart(el, valFn, goal, color, soft, label) {
   }).join('');
 }
 
+/* ---------- DIA EM VISUALIZAÇÃO ---------- */
+let viewDay = null;                         // null = hoje
+const curDay = () => viewDay || dayKey();
+const curDate = () => viewDay ? new Date(viewDay + 'T12:00:00') : new Date();
+const isToday = () => !viewDay || viewDay === dayKey();
+function setViewDay(k) { viewDay = (!k || k >= dayKey()) ? null : k; renderAll(); }
+function shiftDay(n) { const d = curDate(); d.setDate(d.getDate() + n); setViewDay(dayKey(d)); }
+function renderDayNav() {
+  const d = curDate(), today = isToday();
+  const txt = today ? 'Hoje, ' + d.toLocaleDateString('pt-PT',{day:'numeric', month:'long'})
+                    : d.toLocaleDateString('pt-PT',{weekday:'short', day:'numeric', month:'short'});
+  document.querySelectorAll('.daynav').forEach(n => {
+    n.querySelector('.dn-txt').textContent = txt;
+    n.querySelector('.dn-lbl').classList.toggle('past', !today);
+    n.querySelector('.dn-in').value = curDay(); n.querySelector('.dn-in').max = dayKey();
+    n.querySelector('[data-dn="1"]').disabled = today;
+  });
+  document.querySelectorAll('.backtoday').forEach(b => b.classList.toggle('show', !today));
+  $('hojeTitle').textContent = today ? 'Hoje' : 'Dia';
+}
+document.querySelectorAll('.daynav [data-dn]').forEach(b => b.onclick = () => shiftDay(+b.dataset.dn));
+document.querySelectorAll('.dn-in').forEach(i => i.onchange = () => { if (i.value) setViewDay(i.value); });
+document.querySelectorAll('.backtoday').forEach(b => b.onclick = () => setViewDay(null));
+const stampFor = () => isToday() ? Date.now() : curDate().getTime();
+
 /* ---------- HOJE ---------- */
 function renderHoje() {
-  const k = dayKey();
-  $('todayLbl').textContent = new Date().toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
+  const k = curDay();
   const w = waterSum(k), kc = kcalSum(k), st = stepsOf(k);
   const bar = (id, v, g) => $(id).style.width = Math.min(v/g*100,100)+'%';
   const tgt = kcalTarget(k), mg = data.macroGoal;
@@ -529,13 +573,14 @@ function renderHoje() {
   $('wGoal').textContent = `de ${fmt(data.goal)} ml`;
   $('ring').style.strokeDashoffset = 540.35*(1-Math.min(w/data.goal,1));
   $('wStatus').textContent = w < data.goal ? `Faltam ${fmt(data.goal-w)} ml` : 'Objetivo cumprido 💧';
+  renderWaterHist();
   weekChart($('wWeek'), waterSum, data.goal, 'var(--water)', 'var(--water-soft)', v => (v/1000).toFixed(1));
   $('gWater').value = data.goal; $('gKcal').value = data.kcalGoal; $('gSteps').value = data.stepsGoal;
   $('gP').value = data.macroGoal.p; $('gC').value = data.macroGoal.c; $('gF').value = data.macroGoal.f; $('gCountEx').checked = data.countExercise;
 
   // treinador: só factos calculados a partir dos teus registos
   const tips = [];
-  const h = new Date().getHours();
+  const h = isToday() ? new Date().getHours() : 24;
   if (w < data.goal) tips.push(`Água: faltam ${fmt(data.goal-w)} ml para o objetivo.`); else tips.push('Água: objetivo cumprido. 💧');
   if (kc === 0) tips.push('Comida: ainda não registaste nada hoje.');
   else if (kc <= tgt) tips.push(`Calorias: ainda tens ${fmt(tgt-kc)} kcal até ao teu objetivo${burned(k)&&data.countExercise?` (inclui ${fmt(burned(k))} kcal de exercício)`:''}.`);
@@ -543,7 +588,7 @@ function renderHoje() {
   if (kc > 0) { const pr = macroSum(k,'p'); tips.push(pr < mg.p ? `Proteína: faltam ${fmt(mg.p-pr)} g.` : 'Proteína: objetivo cumprido. 💪'); }
   const missing = MEALS.slice(0,4).filter((m,i) => (data.meals[k]||[]).every(e=>e.meal!==m) && h >= [11,15,18,22][i]);
   if (missing.length) tips.push(`Por registar: ${missing.join(', ').toLowerCase()}.`);
-  if (!data.steps[k]) tips.push('Passos: corre o Atalho e cola os passos de hoje.');
+  if (!data.steps[k]) tips.push(isToday() ? 'Passos: corre o Atalho e cola os passos de hoje.' : 'Passos: sem registo neste dia.');
   else if (st < data.stepsGoal) tips.push(`Passos: faltam ${fmt(data.stepsGoal-st)} para o objetivo.`);
   else tips.push('Passos: objetivo cumprido. 👟');
   const ms = data.measures.filter(m=>m.weight).sort((a,b)=>a.date.localeCompare(b.date));
@@ -560,15 +605,32 @@ function renderHoje() {
 
 function addWater(ml) {
   if (!(ml>0)) return;
-  (data.water[dayKey()] ||= []).push({ml, t:Date.now()}); save(); renderHoje();
+  (data.water[curDay()] ||= []).push({ml, t:stampFor()}); save(); renderAll();
 }
 document.querySelectorAll('[data-ml]').forEach(b => b.addEventListener('click', () => addWater(+b.dataset.ml)));
 $('wCustom').onclick = () => { const v = +prompt('Quantos ml?','250'); if (v>0 && v<5000) addWater(Math.round(v)); };
-$('wUndo').onclick = () => { const a = data.water[dayKey()]; if (a && a.length) { a.pop(); save(); renderHoje(); } };
+$('wUndo').onclick = () => { const a = data.water[curDay()]; if (a && a.length) { a.pop(); save(); renderAll(); } };
 [['gP','p'],['gC','c'],['gF','f']].forEach(([id,m]) => $(id).addEventListener('change', e => { const v = Math.round(+e.target.value); if (v>=0 && v<=1000) { data.macroGoal[m]=v; save(); } renderAll(); }));
 $('gCountEx').onchange = e => { data.countExercise = e.target.checked; save(); renderAll(); };
 [['gWater','goal',250],['gKcal','kcalGoal',500],['gSteps','stepsGoal',500]].forEach(([id,key,min]) =>
   $(id).addEventListener('change', e => { const v = Math.round(+e.target.value); if (v>=min && v<=100000) { data[key]=v; save(); } renderAll(); }));
+
+function renderWaterHist() {
+  const days = Object.keys(data.water).filter(d => waterSum(d) > 0).sort().reverse();
+  if (!days.length) { $('wHist').innerHTML = '<p class="muted">Ainda sem registos.</p>'; return; }
+  const months = {};
+  days.forEach(d => (months[d.slice(0,7)] ||= []).push(d));
+  const openM = [...$('wHist').querySelectorAll('details[open]')].map(x => x.dataset.m);
+  $('wHist').innerHTML = Object.entries(months).map(([m, ds], idx) => {
+    const tot = ds.reduce((a,d)=>a+waterSum(d),0), hit = ds.filter(d => waterSum(d) >= data.goal).length;
+    let name = new Date(m + '-15T12:00:00').toLocaleDateString('pt-PT',{month:'long', year:'numeric'}); name = name[0].toUpperCase() + name.slice(1);
+    const rows = ds.map(d => { const v = waterSum(d), [y,mo,da] = d.split('-');
+      return `<div class="mrow"><span>${da}/${mo} · ${new Date(d+'T12:00:00').toLocaleDateString('pt-PT',{weekday:'short'})}</span><span><b>${(v/1000).toFixed(2).replace('.',',')} L</b> ${v >= data.goal ? '✓' : ''}</span></div>`; }).join('');
+    return `<details class="mday" data-m="${m}" ${openM.includes(m) || (!openM.length && idx===0) ? 'open' : ''}><summary class="mday-btn"><span>${name}</span>
+      <span class="muted" style="font-weight:500;font-size:13px;margin-left:auto;margin-right:10px">média ${(tot/ds.length/1000).toFixed(1).replace('.',',')} L · ${hit}/${ds.length} ✓</span></summary>
+      <div class="mday-body">${rows}<p class="note">Média dos dias com registo. ✓ = objetivo cumprido.</p></div></details>`;
+  }).join('');
+}
 
 /* ---------- cópia de segurança ---------- */
 $('export').onclick = async () => {
@@ -591,8 +653,7 @@ $('importFile').onchange = async e => {
 
 /* ---------- COMIDA ---------- */
 function renderComida() {
-  const k = dayKey(), list = data.meals[k] || [];
-  $('foodDayLbl').textContent = new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long'});
+  const k = curDay(), list = data.meals[k] || [];
   const tot = kcalSum(k), tgt = kcalTarget(k);
   $('fTotal').textContent = `${fmt(tot)} kcal`;
   $('fGoal').textContent = tot <= tgt ? `Faltam ${fmt(tgt-tot)} de ${fmt(tgt)} kcal` : `${fmt(tot-tgt)} kcal acima do objetivo`;
@@ -834,7 +895,7 @@ function askQty(food) {
     data.foods[food.id] = saved;
     const qtyTxt = mode==='un' ? `${String(q).replace('.',',')} unidade${q===1?'':'s'} (${fmt(g)} g)` : `${fmt(g)} g`;
     if (pick.target==='meal') {
-      (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:food.name, qty:qtyTxt, kcal:g*food.kcal100/100, ...(hasM?mac(g):{}), t:Date.now() });
+      (data.meals[curDay()] ||= []).push({ meal:pick.meal, name:food.name, qty:qtyTxt, kcal:g*food.kcal100/100, ...(hasM?mac(g):{}), t:stampFor() });
       save(); closeSheet('sheet'); renderAll();
     } else {
       draft.items.push({ name:food.name, grams:g, kcal100:food.kcal100, p100:food.p100??null, c100:food.c100??null, f100:food.f100??null });
@@ -855,7 +916,7 @@ function askRecipe(r) {
   $('pAdd').onclick = () => {
     const p = +String($('por').value).replace(',','.'); if (!(p>0)) return;
     const rm = recipeMac(r);
-    (data.meals[dayKey()] ||= []).push({ meal:pick.meal, name:r.name, qty:`${String(p).replace('.',',')} dose${p===1?'':'s'}`, kcal:p*per, p:rm.p*p, c:rm.c*p, f:rm.f*p, t:Date.now() });
+    (data.meals[curDay()] ||= []).push({ meal:pick.meal, name:r.name, qty:`${String(p).replace('.',',')} dose${p===1?'':'s'}`, kcal:p*per, p:rm.p*p, c:rm.c*p, f:rm.f*p, t:Date.now() });
     save(); closeSheet('sheet'); renderAll();
   };
 }
@@ -863,23 +924,20 @@ function askRecipe(r) {
 /* ---------- ATIVIDADE (passos + exercício) ---------- */
 const AUTO = 'Atividade (app Saúde)';
 function renderPassos() {
-  const k = dayKey(), s = data.steps[k];
-  $('stepsDayLbl').textContent = new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long'});
+  const k = curDay(), s = data.steps[k];
   $('stToday').textContent = fmt(stepsOf(k));
   $('stGoal').textContent = `objetivo: ${fmt(data.stepsGoal)} passos`;
   $('stKm').textContent = s && s.km ? `${s.km.toFixed(2).replace('.',',')} km a andar/correr` : '';
-  $('stUpdated').textContent = s ? `Atualizado às ${new Date(s.t).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}` : 'Ainda sem passos hoje.';
+  $('stUpdated').textContent = s ? `Atualizado às ${new Date(s.t).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'})}` : (isToday() ? 'Ainda sem passos hoje.' : 'Sem passos registados neste dia.');
   weekChart($('stWeek'), stepsOf, data.stepsGoal, 'var(--steps)', 'var(--steps-soft)', v => (v/1000).toFixed(1)+'k');
   // exercício
   const ex = data.exercise[k] || [];
   $('exTotal').textContent = `${fmt(burned(k))} kcal`;
   $('exList').innerHTML = ex.length ? ex.map((e,i)=>`<li><div class="name">${esc(e.name)}<small>${[e.min?fmt(e.min)+' min':'', e.km?String(e.km.toFixed(2)).replace('.',',')+' km':'', e.est?'kcal estimadas':''].filter(Boolean).join(' · ')}</small></div>
-    <span class="val">${fmt(e.kcal)} kcal</span><button class="x" data-exdel="${i}">✕</button></li>`).join('') : '<li class="muted">Sem exercício registado hoje.</li>';
+    <span class="val">${fmt(e.kcal)} kcal</span><button class="x" data-exdel="${i}">✕</button></li>`).join('') : '<li class="muted">Sem exercício registado neste dia.</li>';
   $('exList').querySelectorAll('[data-exdel]').forEach(b => b.onclick = () => {
     if (confirm('Apagar este exercício?')) { data.exercise[k].splice(+b.dataset.exdel,1); save(); renderAll(); }
   });
-  const names = new Set(); Object.values(data.exercise).flat().forEach(e => { if (e.name !== AUTO) names.add(e.name); });
-  $('exNames').innerHTML = [...names].map(n=>`<option value="${esc(n)}">`).join('');
   renderExHist();
 }
 function renderExHist() {
@@ -951,8 +1009,8 @@ $('stravaIn').onchange = async e => {
 };
 const intNum = v => { const d = String(v ?? '').split(/[.,]/)[0].replace(/\D/g,''); return d ? +d : NaN; };
 const decNum = v => parseFloat(String(v ?? '').trim().replace(',','.'));
-function setSteps(steps, km) {
-  data.steps[dayKey()] = { steps:Math.round(steps), km: km||0, t:Date.now() }; save(); renderAll();
+function setSteps(steps, km, k = dayKey()) {
+  data.steps[k] = { steps:Math.round(steps), km: km||0, t:Date.now() }; save(); renderAll();
 }
 function setActive(kcal) {
   const k = dayKey(), list = (data.exercise[k] ||= []);
@@ -960,6 +1018,7 @@ function setActive(kcal) {
   if (i >= 0) list[i].kcal = kcal; else list.push({ name:AUTO, min:0, kcal, t:Date.now() });
 }
 $('stPaste').onclick = async () => {
+  if (!isToday()) { alert('O Atalho dá os valores de hoje, por isso vou guardá-los no dia de hoje.'); viewDay = null; }
   let txt = '';
   try { txt = await navigator.clipboard.readText(); } catch {}
   if (!txt) txt = prompt('Cola aqui o texto do Atalho:') || '';
@@ -973,17 +1032,11 @@ $('stPaste').onclick = async () => {
   setSteps(st, isNaN(km)?0:km);
 };
 $('stManual').onclick = () => {
-  const v = prompt('Quantos passos hoje?', stepsOf(dayKey()) || '');
+  const v = prompt(isToday() ? 'Quantos passos hoje?' : 'Quantos passos neste dia?', stepsOf(curDay()) || '');
   if (v === null) return; const n = +String(v).replace(/[^\d]/g,'');
-  if (n>=0) setSteps(n, (data.steps[dayKey()]||{}).km);
+  if (n>=0) setSteps(n, (data.steps[curDay()]||{}).km, curDay());
 };
-$('exAdd').onclick = () => {
-  const name = $('exName').value.trim(), min = num($('exMin').value), kcal = num($('exKcal').value);
-  if (!name || !(kcal>=0) || kcal===null) { alert('Preenche o exercício e as calorias gastas.'); return; }
-  (data.exercise[dayKey()] ||= []).push({ name, min:min||0, kcal:Math.round(kcal), t:Date.now() });
-  $('exName').value = $('exMin').value = $('exKcal').value = '';
-  save(); renderAll();
-};
+
 
 /* ---------- OBJETIVOS AUTOMÁTICOS ---------- */
 // Calorias: Mifflin-St Jeor x nível de atividade + ritmo (~7700 kcal por kg).
@@ -1073,7 +1126,7 @@ $('cApply').onclick = () => {
 
 /* ---------- CORPO ---------- */
 function renderCorpo() {
-  if (!document.activeElement || !PFIELDS.includes(document.activeElement.id)) loadProfileForm();
+  if (!document.activeElement || ![...PFIELDS,'pName','pBirth','pHeight','pSex'].includes(document.activeElement.id)) loadProfileForm();
   if (!$('mDate').value) $('mDate').value = dayKey();
   const ms = [...data.measures].sort((a,b)=>b.date.localeCompare(a.date));
   const fd = d => { const [y,mo,da] = d.split('-'); return `${da}/${mo}/${y}`; };
@@ -1111,7 +1164,7 @@ function startEdit(date) {
   editingDate = date;
   $('mDate').value = m.date;
   MEASURES.forEach(([k]) => $(mId(k)).value = m[k]!=null ? String(m[k]).replace('.',',') : '');
-  $('mFormTitle').textContent = 'Editar medição';
+  $('mFormTitle').textContent = 'Editar medição'; $('mFormBox').open = true;
   $('mSave').textContent = 'Guardar alterações';
   $('mCancelRow').style.display = '';
   $('mForm').scrollIntoView({ behavior:'smooth', block:'start' });
@@ -1125,16 +1178,32 @@ function endEdit() {
   $('mDate').value = dayKey();
 }
 $('mCancel').onclick = endEdit;
+function ageFrom(b) { if (!b) return null; const d = new Date(b+'T12:00:00'), n = new Date(); let a = n.getFullYear() - d.getFullYear();
+  if (n.getMonth() < d.getMonth() || (n.getMonth() === d.getMonth() && n.getDate() < d.getDate())) a--; return a; }
+function syncAge() { const p = data.profile || {}; if (p.birth) { const a = ageFrom(p.birth); if (a && a !== p.age) { p.age = a; save(); } } }
 function loadProfileForm() {
   const p = data.profile || {};
   $('pSex').value = p.sex || 'f'; $('pAge').value = p.age || ''; $('pHeight').value = p.height || '';
+  $('pName').value = p.name || ''; $('pBirth').value = p.birth || '';
+  const locked = p.locked && p.height && (p.birth || p.age);
+  $('pView').style.display = locked ? 'flex' : 'none'; $('pFields').style.display = locked ? 'none' : '';
+  if (locked) { $('pViewName').textContent = p.name || 'Os teus dados';
+    $('pViewTxt').textContent = `${p.sex==='m'?'Homem':'Mulher'} · ${p.age} anos · ${p.height} cm`; }
   $('pAct').value = p.act || ''; if (!p.act) $('pAct').selectedIndex = -1; $('pGoal').value = p.goalRate != null ? String(p.goalRate) : '-0.5';
   $('pTarget').value = p.target ? String(p.target).replace('.',',') : '';
   $('pProt').value = p.protPerKg ? String(p.protPerKg).replace('.',',') : ''; $('pFat').value = p.fatPct || '';
 }
-const PFIELDS = ['pSex','pAge','pHeight','pAct','pGoal','pTarget','pProt','pFat'];
+const PFIELDS = ['pAct','pGoal','pTarget','pProt','pFat'];
+$('pEdit').onclick = () => { data.profile.locked = false; loadProfileForm(); };
+$('pLock').onclick = () => {
+  const birth = $('pBirth').value, h = num($('pHeight').value);
+  if (!h || !(birth || num($('pAge').value))) { alert('Preenche a data de nascimento e a altura.'); return; }
+  data.profile = Object.assign({}, data.profile, { name:$('pName').value.trim(), sex:$('pSex').value, birth, height:h,
+    age: birth ? ageFrom(birth) : num($('pAge').value), locked:true });
+  save(); renderAll();
+};
 PFIELDS.forEach(id => $(id).addEventListener('change', () => {
-  data.profile = Object.assign({}, data.profile, { sex:$('pSex').value, age:num($('pAge').value), height:num($('pHeight').value),
+  data.profile = Object.assign({}, data.profile, {
     act:$('pAct').value, goalRate:+$('pGoal').value, target:num($('pTarget').value),
     protPerKg:num($('pProt').value), fatPct:num($('pFat').value) });
   save(); renderAll();
@@ -1155,7 +1224,7 @@ $('mSave').onclick = () => {
     if (old) Object.assign(old, m); else data.measures.push(m);
   }
   save();
-  endEdit();
+  endEdit(); $('mFormBox').open = false;
   renderAll();
 };
 
@@ -1259,7 +1328,7 @@ function renderSummary() {
   let head = '';
   if (!classify && (fLast || mLast)) head += '<p class="note" style="margin-top:0">Preenche "Os teus dados" (sexo e idade) para ver as classificações.</p>';
   if (say.length) head += `<div class="card" style="background:var(--body-soft);margin:0 0 6px;padding:14px">${say.map(x=>`<div style="margin:2px 0">• ${x}</div>`).join('')}</div>`;
-  el.innerHTML = head + out.join('');
+  el.innerHTML = head + (out.length ? `<details class="mday" id="sumDetails" ${$('sumDetails') && $('sumDetails').open ? 'open' : ''} style="margin-top:8px"><summary class="mday-btn">Ver detalhes de cada medida</summary><div class="mday-body">${out.join('')}</div></details>` : '');
 }
 
 /* ---------- RECEITAS ---------- */
@@ -1344,20 +1413,19 @@ const kcalFor = (met, min) => Math.round(met * curWeight() * min / 60);
 let trTime = 0, restTimer = null;
 
 function todaySession() {
-  const k = dayKey();
-  data.sessions[k] ||= { workout: data.weekPlan[new Date().getDay()], done: [], finished: false };
+  const k = curDay();
+  data.sessions[k] ||= { workout: data.weekPlan[curDate().getDay()], done: [], finished: false };
   return data.sessions[k];
 }
 function classesToday() {
-  const d = new Date().getDay();
+  const d = curDate().getDay();
   return Object.values(CLASSES).filter(c => c.times[d]).map(c => `${c.name}: ${c.times[d].join(' e ')}`);
 }
 function renderTreino() {
   ensureTraining();
-  const now = new Date(), ses = todaySession(), wid = ses.workout, w = data.workouts[wid];
-  $('trDayLbl').textContent = now.toLocaleDateString('pt-PT',{weekday:'long', day:'numeric', month:'long'});
+  const now = curDate(), ses = todaySession(), wid = ses.workout, w = data.workouts[wid];
   const cls = classesToday();
-  const clsHtml = cls.length ? `<div class="classes">📅 Aulas hoje: ${cls.map(esc).join(' · ')}</div>` : '';
+  const clsHtml = cls.length ? `<div class="classes">📅 Aulas neste dia: ${cls.map(esc).join(' · ')}</div>` : '';
   let html = '';
   if (!w) {
     html = `<div class="card"><h2>${esc(WD[now.getDay()])}: ${esc(PLAN_LBL[wid] || 'Descanso')}</h2>${clsHtml}
@@ -1403,9 +1471,9 @@ function finishWorkout() {
   const real = num(ans) || Math.round(mins);
   // minutos a mais contam como musculação; minutos a menos reduzem proporcionalmente
   kcal = real >= mins ? Math.round(kcal + kcalFor(MET.strength, real - mins)) : Math.round(kcal * real / Math.max(mins,1));
-  const k = dayKey(), name = `Treino ${ses.workout} – ${w.name}`;
+  const k = curDay(), name = `Treino ${ses.workout} – ${w.name}`;
   data.exercise[k] = (data.exercise[k]||[]).filter(e => !e.workout);
-  data.exercise[k].push({ name, min:real, kcal, est:true, workout:ses.workout, t:Date.now() });
+  data.exercise[k].push({ name, min:real, kcal, est:true, workout:ses.workout, t:stampFor() });
   ses.finished = true; save(); renderAll();
   alert(`Registado: ${name}, ${real} min, ~${kcal} kcal (estimado).`);
 }
@@ -1414,7 +1482,7 @@ document.querySelectorAll('[data-quick]').forEach(b => b.onclick = () => {
   const ans = prompt(`${names[q]}: quantos minutos?`, q==='walk' ? 30 : 30); if (ans === null) return;
   const min = num(ans); if (!(min > 0)) return;
   const kcal = kcalFor(MET[q], min);
-  (data.exercise[dayKey()] ||= []).push({ name:names[q], min, kcal, est:true, t:Date.now() });
+  (data.exercise[curDay()] ||= []).push({ name:names[q], min, kcal, est:true, t:stampFor() });
   save(); renderAll(); alert(`Registado: ${names[q]}, ${min} min, ~${kcal} kcal (estimado).`);
 });
 
@@ -1472,7 +1540,7 @@ function renderTrEdit() {
 }
 
 /* ---------- arranque ---------- */
-function renderAll(){ applyAuto(); renderHoje(); renderAutoInfo(); renderComida(); renderTreino(); renderPassos(); renderCorpo(); renderReceitas(); }
+function renderAll(){ syncAge(); applyAuto(); renderDayNav(); renderHoje(); renderAutoInfo(); renderComida(); renderTreino(); renderPassos(); renderCorpo(); renderReceitas(); }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) renderAll(); });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 renderAll();
