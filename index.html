@@ -141,6 +141,9 @@
   .chips { display:flex; gap:8px; flex-wrap:wrap; margin:10px 0 4px; }
   .chips button { padding:8px 14px; font-size:14px; background:var(--bg); color:var(--muted); font-weight:500; }
   .chips button.active { background:var(--food-soft); color:var(--food); font-weight:700; }
+  .lb-grp { font-weight:700; margin:12px 0 4px; color:var(--food); font-size:15px; }
+  .lb-ing { margin:0; padding-left:20px; line-height:1.55; font-size:15px; }
+  .lb-prep { font-size:15px; line-height:1.55; margin:6px 0 0; }
   .classes { font-size:14px; color:var(--muted); margin-top:6px; line-height:1.5; }
   .edit-ex { display:grid; grid-template-columns:1fr 1fr 1fr 30px; gap:6px; align-items:center; margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--line); }
   .edit-ex > input:first-child { grid-column:1 / -1; font-weight:600; }
@@ -403,11 +406,31 @@
 <!-- ============ RECEITAS ============ -->
 <section class="tab" id="tab-receitas">
   <header><h1>Receitas</h1></header>
+  <div class="seg" id="rMode" style="margin-top:0"><button data-rm="mine" class="active">As minhas</button><button data-rm="book">📖 Livro</button></div>
+  <div id="rBook" style="display:none">
+    <div class="card" id="lbEmpty">
+      <h2 style="margin-top:0">Livro de receitas</h2>
+      <p class="note" style="margin-top:0">Importa o ficheiro <b>livro-receitas.json</b>. Fica guardado só neste telemóvel.</p>
+      <div class="row"><button class="food" id="lbImport">📥 Importar livro de receitas</button></div>
+    </div>
+    <div id="lbView" style="display:none">
+      <div class="card">
+        <input id="lbQ" placeholder="Procurar receita ou ingrediente" autocomplete="off">
+        <div class="chips" id="lbTop"></div>
+        <div class="chips" id="lbSub"></div>
+      </div>
+      <div class="card" id="lbListCard"><h2 id="lbTitle" style="margin-top:0"></h2><ul class="list" id="lbList"></ul></div>
+      <div class="row"><button class="secondary danger" id="lbRemove">Apagar livro deste telemóvel</button></div>
+    </div>
+    <input type="file" id="lbFile" accept="application/json,.json" hidden>
+  </div>
+  <div id="rMine">
   <div class="card">
     <p class="note" style="margin-top:0">Cria as tuas receitas com os ingredientes (podes ler o código de barras de cada um). A app calcula as calorias por dose e depois podes adicioná-la a uma refeição.</p>
     <div class="row"><button class="food" id="rNew">+ Nova receita</button></div>
   </div>
   <div id="rList"></div>
+  </div>
 </section>
 
 </main>
@@ -441,6 +464,12 @@
   <textarea id="rNotes" rows="4" style="font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--text);font-size:16px"></textarea>
   <div class="row"><button class="food" id="rSave">Guardar receita</button></div>
   <div class="row"><button class="secondary danger" id="rDelete">Apagar receita</button></div>
+</div>
+
+<!-- ============ FOLHA: receita do livro ============ -->
+<div class="sheet" id="lSheet">
+  <div class="sheet-top"><h2 id="lTitle">Receita</h2><button class="x" id="lClose">✕</button></div>
+  <div id="lBody"></div>
 </div>
 
 <!-- ============ FOLHA: calculadora ============ -->
@@ -704,7 +733,7 @@ function openSheet(id){ $('sheetBg').classList.add('open'); $(id).classList.add(
 function closeSheet(id){ $(id).classList.remove('open'); if (!document.querySelector('.sheet.open')) $('sheetBg').classList.remove('open'); }
 async function stopScanner(){ if (scanner) { try { await scanner.stop(); } catch {} try { scanner.clear(); } catch {} scanner = null; } }
 $('sheetClose').onclick = async () => { await stopScanner(); closeSheet('sheet'); };
-$('sheetBg').onclick = async () => { await stopScanner(); closeSheet('sheet'); closeSheet('rSheet'); closeSheet('cSheet'); };
+$('sheetBg').onclick = async () => { await stopScanner(); closeSheet('sheet'); closeSheet('rSheet'); closeSheet('cSheet'); closeSheet('lSheet'); };
 
 function openPicker(opts) {
   pick = opts;
@@ -1374,6 +1403,93 @@ $('rDelete').onclick = () => {
   data.recipes = data.recipes.filter(r=>r.id!==draft.id); save(); closeSheet('rSheet'); renderAll();
 };
 
+
+/* ---------- LIVRO DE RECEITAS (ficheiro importado, só neste telemóvel) ---------- */
+const BOOK_KEY = 'saude-livro-v1';
+const BOOK_TOP = [['receitas','Receitas'],['molhos','Molhos'],['sumos','Sumos'],['shakes','Shakes'],['chas','Chás']];
+const BOOK_SUB = [['pequeno','Pequeno-almoço'],['lanches','Lanches e snacks'],['almoco','Almoço'],['jantar','Jantar'],['saladas','Saladas'],['veg','Veganas e vegetarianas'],['sobremesas','Sobremesas'],['livre','Refeição livre'],['sopas','Sopas']];
+const BOOK_NAMES = Object.fromEntries([...BOOK_TOP, ...BOOK_SUB]);
+let book = null, rMode = 'mine', lbTop = 'receitas', lbSub = 'pequeno';
+try { book = JSON.parse(localStorage.getItem(BOOK_KEY)); } catch {}
+const bookCat = r => BOOK_SUB.some(([k]) => k===r.c) ? 'receitas' : r.c;
+const norm = t => String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+$('rMode').querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { rMode = b.dataset.rm; renderBook(); });
+function renderBook() {
+  $('rMode').querySelectorAll('[data-rm]').forEach(b => b.classList.toggle('active', b.dataset.rm===rMode));
+  $('rMine').style.display = rMode==='mine' ? '' : 'none';
+  $('rBook').style.display = rMode==='book' ? '' : 'none';
+  if (rMode!=='book') return;
+  const has = book && book.receitas && book.receitas.length;
+  $('lbEmpty').style.display = has ? 'none' : '';
+  $('lbView').style.display = has ? '' : 'none';
+  if (!has) return;
+  const all = book.receitas, q = norm($('lbQ').value.trim());
+  const count = f => all.filter(f).length;
+  $('lbTop').innerHTML = BOOK_TOP.map(([k,l]) => `<button data-lt="${k}" class="${!q && lbTop===k?'active':''}">${l} <small>${count(r=>bookCat(r)===k)}</small></button>`).join('');
+  $('lbSub').style.display = !q && lbTop==='receitas' ? '' : 'none';
+  $('lbSub').innerHTML = BOOK_SUB.map(([k,l]) => `<button data-ls="${k}" class="${lbSub===k?'active':''}">${l} <small>${count(r=>r.c===k)}</small></button>`).join('');
+  $('lbTop').querySelectorAll('[data-lt]').forEach(b => b.onclick = () => { lbTop = b.dataset.lt; $('lbQ').value=''; renderBook(); });
+  $('lbSub').querySelectorAll('[data-ls]').forEach(b => b.onclick = () => { lbSub = b.dataset.ls; renderBook(); });
+  let list, title;
+  if (q) { list = all.filter(r => norm(r.n).includes(q) || r.i.some(i => norm(i).includes(q))); title = `${list.length} resultado${list.length===1?'':'s'}`; }
+  else if (lbTop==='receitas') { list = all.filter(r => r.c===lbSub); title = BOOK_NAMES[lbSub]; }
+  else { list = all.filter(r => r.c===lbTop); title = BOOK_NAMES[lbTop]; }
+  $('lbTitle').textContent = title;
+  $('lbList').innerHTML = list.length ? list.map(r => `<li class="pick" data-lb="${esc(r.id)}"><div class="name">${esc(r.n)}<small>${esc([q?BOOK_NAMES[r.c]:'', r.d?'Rende '+r.d:''].filter(Boolean).join(' · '))}</small></div>${r.k?`<span class="val">${fmt(r.k)} kcal</span>`:''}</li>`).join('')
+    : '<li class="muted">Nenhuma receita encontrada.</li>';
+  $('lbList').querySelectorAll('[data-lb]').forEach(li => li.onclick = () => openBookRecipe(all.find(r => r.id===li.dataset.lb)));
+}
+$('lbQ').oninput = renderBook;
+function openBookRecipe(r) {
+  $('lTitle').textContent = r.n;
+  const info = [BOOK_NAMES[r.c], r.d ? `Rende: ${r.d}` : '', r.k ? `${fmt(r.k)} kcal por dose (do livro)` : ''].filter(Boolean);
+  let ing = '', open = false;
+  r.i.forEach(x => {
+    if (x.startsWith('#')) { if (open) ing += '</ul>'; ing += `<div class="lb-grp">${esc(x.slice(1))}</div><ul class="lb-ing">`; open = true; }
+    else { if (!open) { ing += '<ul class="lb-ing">'; open = true; } ing += `<li>${esc(x)}</li>`; }
+  });
+  if (open) ing += '</ul>';
+  $('lBody').innerHTML = `<div class="muted">${info.map(esc).join(' · ')}</div>
+    <h2 style="margin:16px 0 4px">Ingredientes</h2>${ing}
+    <h2 style="margin:16px 0 4px">Preparação</h2><p class="lb-prep">${esc(r.p)}</p>
+    ${r.k ? `<h2 style="margin:18px 0 4px">Registar</h2>
+      <div class="grid2"><div><label for="lMeal">Refeição</label><select id="lMeal">${MEALS.map(m=>`<option ${m===({pequeno:'Pequeno-almoço',almoco:'Almoço',lanches:'Lanche',jantar:'Jantar'}[r.c]||'')?'selected':''}>${m}</option>`).join('')}</select></div>
+      <div><label for="lPor">Doses</label><input id="lPor" type="text" inputmode="decimal" value="1"></div></div>
+      <div class="kcal-preview" id="lPrev"></div>
+      <div class="row"><button class="food" id="lAdd">Adicionar à Comida</button></div>
+      <p class="note">Só calorias (o livro não indica proteína, hidratos nem gordura).</p>` : ''}`;
+  if (r.k) {
+    const por = () => +String($('lPor').value).replace(',','.') || 0;
+    const upd = () => $('lPrev').textContent = `${fmt(por()*r.k)} kcal`;
+    $('lPor').oninput = upd; upd();
+    $('lAdd').onclick = () => {
+      const p = por(); if (!(p>0)) return;
+      (data.meals[curDay()] ||= []).push({ meal:$('lMeal').value, name:r.n, qty:`${String(p).replace('.',',')} dose${p===1?'':'s'}`, kcal:p*r.k, t:Date.now() });
+      save(); closeSheet('lSheet'); renderAll(); alert('Adicionado à Comida.');
+    };
+  }
+  openSheet('lSheet'); $('lSheet').scrollTop = 0;
+}
+$('lClose').onclick = () => closeSheet('lSheet');
+$('lbImport').onclick = () => $('lbFile').click();
+$('lbFile').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return;
+  try {
+    const d = JSON.parse(await f.text());
+    if (d && d.tipo==='livro-receitas' && Array.isArray(d.receitas)) {
+      try { localStorage.setItem(BOOK_KEY, JSON.stringify(d)); } catch { alert('Não há espaço para guardar o livro.'); return; }
+      book = d; renderBook(); alert(`Livro importado: ${d.receitas.length} receitas.`);
+    } else alert('Este ficheiro não é o livro de receitas.');
+  } catch { alert('Não foi possível ler o ficheiro.'); }
+  e.target.value = '';
+};
+$('lbRemove').onclick = () => {
+  if (!confirm('Apagar o livro de receitas deste telemóvel? Podes voltar a importá-lo depois.')) return;
+  try { localStorage.removeItem(BOOK_KEY); } catch {}
+  book = null; renderBook();
+};
+renderBook();
 
 /* ---------- TREINO ---------- */
 // METs do Compêndio de Atividades Físicas (2011/2024)
