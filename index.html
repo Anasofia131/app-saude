@@ -123,6 +123,13 @@
   .mrow { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:15px; }
   .mrow:last-of-type { border-bottom:0; }
   .mrow span:first-child { color:var(--muted); }
+  .quick { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .quick button { padding:8px 12px; font-size:14px; font-weight:600; border-radius:999px; background:var(--bg); color:var(--head); border:1px solid var(--line); }
+  .quick button small { font-weight:500; color:var(--muted); }
+  .quick .again { background:var(--accent-soft); color:var(--accent); border-color:transparent; }
+  .meal-actions { display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-top:10px; }
+  .meal-actions button { padding:11px 8px; }
+  .qadd { background:var(--accent); color:#fff; padding:6px 12px; font-size:15px; border-radius:999px; margin-left:4px; }
   .card { border-radius:22px; border:1px solid var(--line); }
   h1 { color:var(--head); letter-spacing:-.3px; }
   h2 { color:var(--head); }
@@ -316,6 +323,11 @@
   <span id="restTxt"></span><button id="restStop" style="background:var(--bg);color:var(--text);padding:8px 14px">Parar</button>
 </div>
 
+<div id="toast" style="display:none;position:fixed;left:12px;right:12px;bottom:calc(env(safe-area-inset-bottom) + 76px);z-index:16;max-width:456px;margin:0 auto;
+  background:var(--head);color:var(--card);border-radius:16px;padding:12px 16px;align-items:center;justify-content:space-between;gap:10px;font-weight:600">
+  <span id="toastTxt"></span><button id="toastUndo" style="background:var(--card);color:var(--head);padding:8px 12px;flex:0 0 auto">Desfazer</button>
+</div>
+
 <!-- ============ PASSOS ============ -->
 <section class="tab" id="tab-passos">
   <header><h1>Atividade</h1><div class="daynav"><button data-dn="-1" aria-label="Dia anterior">‹</button><label class="dn-lbl"><span class="dn-txt"></span><input type="date" class="dn-in"></label><button data-dn="1" aria-label="Dia seguinte">›</button></div></header>
@@ -455,7 +467,6 @@
         <div class="chips" id="lbSub"></div>
       </div>
       <div class="card" id="lbListCard"><h2 id="lbTitle" style="margin-top:0"></h2><ul class="list" id="lbList"></ul></div>
-      <div class="row"><button class="secondary danger" id="lbRemove">Apagar livro deste telemóvel</button></div>
     </div>
     <input type="file" id="lbFile" accept="application/json,.json" hidden>
   </div>
@@ -707,7 +718,10 @@ function renderWaterHist() {
   }).join('');
 }
 
-$('hAddMeal').onclick = () => document.querySelector('nav [data-tab="comida"]').click();
+$('hAddMeal').onclick = () => {
+  document.querySelector('nav [data-tab="comida"]').click();
+  openPicker({ target:'meal', meal: isToday() ? mealByHour() : 'Almoço' });
+};
 
 /* ---------- cópia de segurança ---------- */
 $('export').onclick = async () => {
@@ -729,6 +743,43 @@ $('importFile').onchange = async e => {
 };
 
 /* ---------- COMIDA ---------- */
+/* ---------- registo rápido ---------- */
+const mealByHour = (h = new Date().getHours()) => h < 11 ? 'Pequeno-almoço' : h < 15 ? 'Almoço' : h < 18 ? 'Lanche' : h < 22 ? 'Jantar' : 'Ceia';
+function foodOfEntry(e) { return (e.fid && data.foods[e.fid]) || Object.values(data.foods).find(f => f.name === e.name) || null; }
+function quickEntry(f, meal) {
+  const un = f.lastMode === 'un' && f.unitG;
+  const q = un ? (f.lastUnits || 1) : (f.lastQty || 100), g = un ? q * f.unitG : q;
+  const e = { meal, fid:f.id, name:f.name, kcal:g*f.kcal100/100, t:stampFor(),
+    qty: un ? `${String(q).replace('.',',')} unidade${q===1?'':'s'} (${fmt(g)} g)` : `${fmt(g)} g` };
+  if (f.p100!=null || f.c100!=null || f.f100!=null) Object.assign(e, { p:(f.p100||0)*g/100, c:(f.c100||0)*g/100, f:(f.f100||0)*g/100 });
+  return e;
+}
+const shortQty = f => f.lastMode === 'un' && f.unitG ? `${String(f.lastUnits||1).replace('.',',')} un.` : `${fmt(f.lastQty||100)} g`;
+function suggestionsFor(meal) {
+  const cnt = {};
+  Object.entries(data.meals).forEach(([d, list]) => (list||[]).forEach(e => {
+    if (e.meal !== meal) return; const f = foodOfEntry(e); if (!f || !(f.kcal100 >= 0)) return;
+    cnt[f.id] = (cnt[f.id] || 0) + 1;
+  }));
+  return Object.entries(cnt).sort((a,b) => b[1]-a[1]).slice(0,4).map(([id]) => data.foods[id]);
+}
+let toastTimer = null, toastUndo = null;
+function toast(txt, undo) {
+  $('toastTxt').textContent = txt; toastUndo = undo; $('toastUndo').style.display = undo ? '' : 'none';
+  $('toast').style.display = 'flex'; clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').style.display = 'none', 4000);
+}
+$('toastUndo').onclick = () => { if (toastUndo) toastUndo(); $('toast').style.display = 'none'; };
+function addEntries(entries, label) {
+  const k = curDay(), list = (data.meals[k] ||= []);
+  entries.forEach(e => { list.push(e); const f = e.fid && data.foods[e.fid]; if (f) f.used = Date.now(); });
+  save(); renderAll();
+  toast(label, () => { entries.forEach(e => { const i = list.indexOf(e); if (i >= 0) list.splice(i,1); }); save(); renderAll(); });
+}
+function previousMeal(meal) {
+  const d = curDate(); d.setDate(d.getDate() - 1);
+  return (data.meals[dayKey(d)] || []).filter(e => e.meal === meal);
+}
+
 function renderComida() {
   const k = curDay(), list = data.meals[k] || [];
   const tot = kcalSum(k), tgt = kcalTarget(k);
@@ -742,8 +793,30 @@ function renderComida() {
       <div class="meal-head"><h2>${m}</h2><span class="meal-kcal">${fmt(sum)} kcal</span></div>
       <ul class="list">${items.map(e=>`<li><div class="name">${esc(e.name)}<small>${esc(e.qty)}${e.p!=null?' · '+macroTxt(e):''}</small></div>
         <span class="val">${fmt(e.kcal)} kcal</span><button class="x" data-del="${e.i}">✕</button></li>`).join('')}</ul>
-      <div class="row"><button class="food" data-addmeal="${m}">+ Adicionar</button></div></div>`;
+      ${(() => {
+        const sug = suggestionsFor(m), prev = items.length ? [] : previousMeal(m);
+        const chips = [
+          prev.length ? `<button class="again" data-again="${m}">↺ Igual a ontem <small>(${fmt(prev.reduce((a,e)=>a+e.kcal,0))} kcal)</small></button>` : '',
+          ...sug.map(f => `<button data-qf="${esc(f.id)}" data-qm="${m}">+ ${esc(f.name.length > 22 ? f.name.slice(0,21)+'…' : f.name)} <small>${shortQty(f)}</small></button>`)
+        ].filter(Boolean);
+        return chips.length ? `<div class="quick">${chips.join('')}</div>` : '';
+      })()}
+      <div class="meal-actions"><button class="food" data-addmeal="${m}">+ Adicionar</button><button class="secondary" data-kcal="${m}">Só kcal</button></div></div>`;
   }).join('');
+  $('meals').querySelectorAll('[data-qf]').forEach(b => b.onclick = () => {
+    const f = data.foods[b.dataset.qf]; if (!f) return;
+    addEntries([quickEntry(f, b.dataset.qm)], `${f.name} adicionado`);
+  });
+  $('meals').querySelectorAll('[data-again]').forEach(b => b.onclick = () => {
+    const prev = previousMeal(b.dataset.again).map(e => ({ ...e, t:stampFor() }));
+    addEntries(prev, `${b.dataset.again} igual a ontem`);
+  });
+  $('meals').querySelectorAll('[data-kcal]').forEach(b => b.onclick = () => {
+    const v = prompt('Quantas calorias?', ''); if (v === null) return;
+    const kc = num(v); if (!(kc > 0)) return;
+    const nm = (prompt('Nome (opcional):', '') || '').trim() || 'Registo rápido';
+    addEntries([{ meal:b.dataset.kcal, name:nm, qty:'só calorias', kcal:kc, t:stampFor() }], `${fmt(kc)} kcal adicionadas`);
+  });
   $('meals').querySelectorAll('[data-addmeal]').forEach(b => b.onclick = () => openPicker({target:'meal', meal:b.dataset.addmeal}));
   $('meals').querySelectorAll('[data-del]').forEach(b => b.onclick = () => {
     if (confirm('Apagar este registo?')) { data.meals[k].splice(+b.dataset.del,1); save(); renderComida(); }
@@ -797,7 +870,9 @@ function showMode(mode) {
   let html = `<div class="seg">${modes.map(([m,l])=>`<button data-mode="${m}" class="${m===mode?'active':''}">${l}</button>`).join('')}</div>`;
   if (mode==='mine') {
     const foods = Object.values(data.foods).sort((a,b)=>(b.used||0)-(a.used||0));
-    html += foods.length ? `<ul class="list">${foods.map(f=>`<li class="pick" data-food="${esc(f.id)}"><div class="name">${esc(f.name)}<small>${esc(f.brand||'')}</small></div><span class="val">${fmt(f.kcal100)} kcal/100g</span></li>`).join('')}</ul>`
+    html += foods.length ? `<input id="mineQ" placeholder="Procurar nos meus alimentos" style="margin-bottom:6px">
+      <ul class="list" id="mineList">${foods.map(f=>`<li data-name="${esc(norm(f.name+' '+(f.brand||'')))}"><div class="name pick" data-food="${esc(f.id)}">${esc(f.name)}<small>${esc(f.brand||'')}${f.brand?' · ':''}${shortQty(f)} · ${fmt(f.kcal100)} kcal/100g</small></div>${pick.target==='meal' ? `<button class="qadd" data-fast="${esc(f.id)}" aria-label="Adicionar já">+</button>` : ''}</li>`).join('')}</ul>
+      ${pick.target==='meal' ? '<p class="note">O <b>+</b> adiciona logo com a última quantidade. Toca no nome para mudar a quantidade.</p>' : ''}`
       : `<p class="muted">Ainda não tens alimentos guardados. Os que adicionares por código de barras, pesquisa ou à mão ficam aqui.</p>`;
   }
   if (mode==='recipes') {
@@ -829,6 +904,10 @@ function showMode(mode) {
   $('sheetBody').innerHTML = html;
   $('sheetBody').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => showMode(b.dataset.mode));
   $('sheetBody').querySelectorAll('[data-food]').forEach(li => li.onclick = () => askQty(data.foods[li.dataset.food]));
+  $('sheetBody').querySelectorAll('[data-fast]').forEach(b => b.onclick = () => {
+    const f = data.foods[b.dataset.fast]; closeSheet('sheet'); addEntries([quickEntry(f, pick.meal)], `${f.name} adicionado`); });
+  if ($('mineQ')) $('mineQ').oninput = () => { const q = norm($('mineQ').value.trim());
+    $('mineList').querySelectorAll('li').forEach(li => li.style.display = !q || li.dataset.name.includes(q) ? '' : 'none'); };
   $('sheetBody').querySelectorAll('[data-recipe]').forEach(li => li.onclick = () => askRecipe(data.recipes.find(r=>r.id===li.dataset.recipe)));
 
   if (mode==='scan') {
@@ -972,7 +1051,7 @@ function askQty(food) {
     data.foods[food.id] = saved;
     const qtyTxt = mode==='un' ? `${String(q).replace('.',',')} unidade${q===1?'':'s'} (${fmt(g)} g)` : `${fmt(g)} g`;
     if (pick.target==='meal') {
-      (data.meals[curDay()] ||= []).push({ meal:pick.meal, name:food.name, qty:qtyTxt, kcal:g*food.kcal100/100, ...(hasM?mac(g):{}), t:stampFor() });
+      (data.meals[curDay()] ||= []).push({ meal:pick.meal, fid:food.id, name:food.name, qty:qtyTxt, kcal:g*food.kcal100/100, ...(hasM?mac(g):{}), t:stampFor() });
       save(); closeSheet('sheet'); renderAll();
     } else {
       draft.items.push({ name:food.name, grams:g, kcal100:food.kcal100, p100:food.p100??null, c100:food.c100??null, f100:food.f100??null });
@@ -1591,11 +1670,6 @@ $('lbFile').onchange = async e => {
     } else alert('Este ficheiro não é o livro de receitas.');
   } catch { alert('Não foi possível ler o ficheiro.'); }
   e.target.value = '';
-};
-$('lbRemove').onclick = () => {
-  if (!confirm('Apagar o livro de receitas deste telemóvel? Podes voltar a importá-lo depois.')) return;
-  try { localStorage.removeItem(BOOK_KEY); } catch {}
-  book = null; renderBook();
 };
 renderBook();
 
