@@ -7,27 +7,29 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Saúde">
-<meta name="theme-color" content="#f4f8fb">
+<meta name="theme-color" content="#FDF2F6">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Saúde</title>
 <style>
   :root {
-    --bg:#f4f8fb; --card:#fff; --text:#16212b; --muted:#6b7a88; --line:#e3e9ef;
-    --water:#2f8fe0; --water-soft:#dbeafa;
-    --food:#e07a2f; --food-soft:#fbe8d9;
-    --steps:#2fa86b; --steps-soft:#d9f2e5;
-    --body:#8a5cd6; --body-soft:#ece3fa;
-    --danger:#d6455d;
+    --bg:#FDF2F6; --card:#fff; --text:#2C1520; --muted:#8A6273; --line:#F4D3DF;
+    --accent:#D4537E; --accent-soft:#FBE3EC; --head:#72243E;
+    --water:#7F77DD; --water-soft:#EEEDFE;
+    --food:#D4537E; --food-soft:#FBE3EC;
+    --steps:#D85A30; --steps-soft:#FAECE7;
+    --body:#993556; --body-soft:#F8DCE6;
+    --danger:#E24B4A;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#0f1419; --card:#1a2129; --text:#eef2f6; --muted:#93a1ae; --line:#2a333d;
-      --water:#4ea6f0; --water-soft:#1d3346; --food:#f0954e; --food-soft:#3a2a1d;
-      --steps:#4cc488; --steps-soft:#1b3428; --body:#a882ec; --body-soft:#2c2340; }
+    :root { --bg:#1A1015; --card:#26171E; --text:#F7E8EE; --muted:#C49AAE; --line:#3A2530;
+      --accent:#ED93B1; --accent-soft:#4B1528; --head:#F4C0D1;
+      --water:#AFA9EC; --water-soft:#26215C; --food:#ED93B1; --food-soft:#4B1528;
+      --steps:#F0997B; --steps-soft:#4A1B0C; --body:#F4C0D1; --body-soft:#3A1626; }
   }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { margin:0; background:var(--bg); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    font-family:ui-rounded,"SF Pro Rounded",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
   main { max-width:480px; margin:0 auto;
     padding:calc(env(safe-area-inset-top) + 16px) 16px calc(env(safe-area-inset-bottom) + 96px); }
   header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:16px; }
@@ -37,7 +39,7 @@
   .card { background:var(--card); border-radius:18px; padding:18px; margin-bottom:14px; }
   .tab { display:none; } .tab.active { display:block; }
   button { font:inherit; border:0; border-radius:14px; padding:13px 10px; cursor:pointer;
-    background:var(--water-soft); color:var(--water); font-weight:600; font-size:16px; }
+    background:var(--accent-soft); color:var(--accent); font-weight:600; font-size:16px; }
   button:active { transform:scale(.97); }
   button.secondary { background:transparent; color:var(--muted); border:1px solid var(--line); font-weight:500; }
   button.food { background:var(--food-soft); color:var(--food); }
@@ -121,6 +123,26 @@
   .mrow { display:flex; justify-content:space-between; padding:9px 12px; border-bottom:1px solid var(--line); font-size:15px; }
   .mrow:last-of-type { border-bottom:0; }
   .mrow span:first-child { color:var(--muted); }
+  .card { border-radius:22px; border:1px solid var(--line); }
+  h1 { color:var(--head); letter-spacing:-.3px; }
+  h2 { color:var(--head); }
+  nav button.active { color:var(--accent); }
+  nav button svg { display:block; margin:0 auto 1px; }
+  nav button.active svg { stroke-width:2.4; }
+  .hero { text-align:center; padding:20px 18px; }
+  .hero .hi { font-size:22px; font-weight:700; color:var(--head); margin:0; }
+  .hero .when { color:var(--muted); font-size:14px; margin:2px 0 8px; }
+  .kring { width:168px; height:168px; border-radius:50%; margin:6px auto 4px; display:flex; align-items:center; justify-content:center; transition:background .4s; }
+  .kring > div { width:136px; height:136px; border-radius:50%; background:var(--card); display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .kring b { font-size:34px; color:var(--head); line-height:1.05; }
+  .kring span { font-size:13px; color:var(--muted); }
+  .tiles { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:14px; }
+  .tile { background:var(--bg); border-radius:16px; padding:10px 6px; }
+  .tile .tl { font-size:12px; color:var(--muted); display:flex; align-items:center; justify-content:center; gap:4px; }
+  .tile .tv { font-size:18px; font-weight:700; margin-top:2px; }
+  .tile .tv small { font-size:12px; font-weight:500; color:var(--muted); }
+  .btn-main { background:var(--accent); color:#fff; width:100%; margin-top:14px; }
+  @media (prefers-color-scheme: dark) { .btn-main { color:#26171E; } }
   .daynav { display:flex; align-items:center; gap:2px; }
   .daynav button { background:none; color:var(--muted); font-size:24px; padding:2px 8px; font-weight:400; }
   .daynav button:disabled { opacity:.25; }
@@ -167,14 +189,27 @@
   <header><h1 id="hojeTitle">Hoje</h1><div class="daynav"><button data-dn="-1" aria-label="Dia anterior">‹</button><label class="dn-lbl"><span class="dn-txt"></span><input type="date" class="dn-in"></label><button data-dn="1" aria-label="Dia seguinte">›</button></div></header>
   <button class="secondary backtoday" style="width:100%;padding:9px">← Voltar a hoje</button>
 
+  <div class="card hero">
+    <p class="hi" id="hiName">Olá</p>
+    <p class="when" id="hiWhen"></p>
+    <div class="kring" id="hRing"><div><b id="hKcal">0</b><span>kcal</span></div></div>
+    <div class="muted" id="hLeft" style="font-size:14px"></div>
+    <div class="tiles">
+      <div class="tile"><div class="tl"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546" /> </svg> Água</div><div class="tv" id="hWater" style="color:var(--water)"></div></div>
+      <div class="tile"><div class="tl"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M4 6h5.426a1 1 0 0 1 .863 .496l1.064 1.823a3 3 0 0 0 1.896 1.407l4.677 1.114a4 4 0 0 1 3.074 3.89v2.27a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-10a1 1 0 0 1 1 -1" /> <path d="M14 13l1 -2" /> <path d="M8 18v-1a4 4 0 0 0 -4 -4h-1" /> <path d="M10 12l1.5 -3" /> </svg> Passos</div><div class="tv" id="hSteps" style="color:var(--steps)"></div></div>
+      <div class="tile"><div class="tl"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M19 14.083c0 4.154 -2.966 6.74 -7 6.917c-4.2 0 -7 -2.763 -7 -6.917c0 -5.538 3.5 -11.09 7 -11.083c3.5 .007 7 5.545 7 11.083" /> </svg> Proteína</div><div class="tv" id="hProt" style="color:var(--body)"></div></div>
+    </div>
+    <button class="btn-main" id="hAddMeal"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" style="vertical-align:-3px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M12 5l0 14" /> <path d="M5 12l14 0" /> </svg> Registar refeição</button>
+  </div>
+
   <div class="card">
-    <h2>Resumo do dia</h2>
-    <div class="stat"><div class="lbl">Calorias</div><div class="bar" style="background:var(--food-soft)"><i id="sKcalBar" style="background:var(--food)"></i></div><div class="num" id="sKcal"></div></div>
+    <h2>Macros e objetivos</h2>
+    <div class="stat" style="display:none"><div class="lbl">Calorias</div><div class="bar" style="background:var(--food-soft)"><i id="sKcalBar" style="background:var(--food)"></i></div><div class="num" id="sKcal"></div></div>
     <div class="stat"><div class="lbl">Proteína</div><div class="bar" style="background:var(--body-soft)"><i id="sPBar" style="background:var(--body)"></i></div><div class="num" id="sP"></div></div>
     <div class="stat"><div class="lbl">Hidratos</div><div class="bar" style="background:var(--food-soft)"><i id="sCBar" style="background:var(--food)"></i></div><div class="num" id="sC"></div></div>
-    <div class="stat"><div class="lbl">Gordura</div><div class="bar" style="background:var(--water-soft)"><i id="sFBar" style="background:var(--water)"></i></div><div class="num" id="sF"></div></div>
-    <div class="stat"><div class="lbl">Água</div><div class="bar" style="background:var(--water-soft)"><i id="sWaterBar" style="background:var(--water)"></i></div><div class="num" id="sWater"></div></div>
-    <div class="stat"><div class="lbl">Passos</div><div class="bar" style="background:var(--steps-soft)"><i id="sStepsBar" style="background:var(--steps)"></i></div><div class="num" id="sSteps"></div></div>
+    <div class="stat" style="border-bottom:0"><div class="lbl">Gordura</div><div class="bar" style="background:var(--water-soft)"><i id="sFBar" style="background:var(--water)"></i></div><div class="num" id="sF"></div></div>
+    <div class="stat" style="display:none"><div class="lbl">Água</div><div class="bar" style="background:var(--water-soft)"><i id="sWaterBar" style="background:var(--water)"></i></div><div class="num" id="sWater"></div></div>
+    <div class="stat" style="display:none"><div class="lbl">Passos</div><div class="bar" style="background:var(--steps-soft)"><i id="sStepsBar" style="background:var(--steps)"></i></div><div class="num" id="sSteps"></div></div>
   </div>
 
   <div class="card">
@@ -436,12 +471,12 @@
 </main>
 
 <nav>
-  <button data-tab="hoje" class="active"><span class="ic">🏠</span>Hoje</button>
-  <button data-tab="comida"><span class="ic">🍽️</span>Comida</button>
-  <button data-tab="treino"><span class="ic">🏋️</span>Treino</button>
-  <button data-tab="passos"><span class="ic">👟</span>Atividade</button>
-  <button data-tab="corpo"><span class="ic">📏</span>Corpo</button>
-  <button data-tab="receitas"><span class="ic">🥗</span>Receitas</button>
+  <button data-tab="hoje" class="active"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M5 12l-2 0l9 -9l9 9l-2 0" /> <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" /> <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" /> </svg>Hoje</button>
+  <button data-tab="comida"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M19 3v12h-5c-.023 -3.681 .184 -7.406 5 -12m0 12v6h-1v-3m-10 -14v17m-3 -17v3a3 3 0 1 0 6 0v-3" /> </svg>Comida</button>
+  <button data-tab="treino"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M2 12h1" /> <path d="M6 8h-2a1 1 0 0 0 -1 1v6a1 1 0 0 0 1 1h2" /> <path d="M6 7v10a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-10a1 1 0 0 0 -1 -1h-1a1 1 0 0 0 -1 1" /> <path d="M9 12h6" /> <path d="M15 7v10a1 1 0 0 0 1 1h1a1 1 0 0 0 1 -1v-10a1 1 0 0 0 -1 -1h-1a1 1 0 0 0 -1 1" /> <path d="M18 8h2a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-2" /> <path d="M22 12h-1" /> </svg>Treino</button>
+  <button data-tab="passos"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M4 6h5.426a1 1 0 0 1 .863 .496l1.064 1.823a3 3 0 0 0 1.896 1.407l4.677 1.114a4 4 0 0 1 3.074 3.89v2.27a1 1 0 0 1 -1 1h-16a1 1 0 0 1 -1 -1v-10a1 1 0 0 1 1 -1" /> <path d="M14 13l1 -2" /> <path d="M8 18v-1a4 4 0 0 0 -4 -4h-1" /> <path d="M10 12l1.5 -3" /> </svg>Atividade</button>
+  <button data-tab="corpo"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M19.875 12c.621 0 1.125 .512 1.125 1.143v5.714c0 .631 -.504 1.143 -1.125 1.143h-15.875a1 1 0 0 1 -1 -1v-5.857c0 -.631 .504 -1.143 1.125 -1.143h15.75" /> <path d="M9 12v2" /> <path d="M6 12v3" /> <path d="M12 12v3" /> <path d="M18 12v3" /> <path d="M15 12v2" /> <path d="M3 3v4" /> <path d="M3 5h18" /> <path d="M21 3v4" /> </svg>Corpo</button>
+  <button data-tab="receitas"><svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" >  <path d="M19 4v16h-12a2 2 0 0 1 -2 -2v-12a2 2 0 0 1 2 -2h12" /> <path d="M19 16h-12a2 2 0 0 0 -2 2" /> <path d="M9 8h6" /> </svg>Receitas</button>
 </nav>
 
 <!-- ============ FOLHA: escolher alimento ============ -->
@@ -591,6 +626,17 @@ function renderHoje() {
   const w = waterSum(k), kc = kcalSum(k), st = stepsOf(k);
   const bar = (id, v, g) => $(id).style.width = Math.min(v/g*100,100)+'%';
   const tgt = kcalTarget(k), mg = data.macroGoal;
+  // cartão principal
+  const nm = ((data.profile||{}).name || '').trim();
+  $('hiName').textContent = isToday() ? (nm ? `Olá, ${nm}` : 'Olá') : (nm ? `${nm}, este dia` : 'Este dia');
+  $('hiWhen').textContent = isToday() ? 'Vamos a isso 💪' : curDate().toLocaleDateString('pt-PT',{weekday:'long', day:'numeric', month:'long'});
+  const pct = Math.min(kc / Math.max(tgt,1), 1) * 100, over = kc > tgt;
+  $('hRing').style.background = `conic-gradient(${over ? 'var(--danger)' : 'var(--accent)'} 0 ${pct}%, var(--accent-soft) 0)`;
+  $('hKcal').textContent = fmt(kc);
+  $('hLeft').textContent = over ? `${fmt(kc-tgt)} kcal acima do objetivo` : `faltam ${fmt(tgt-kc)} de ${fmt(tgt)} kcal`;
+  $('hWater').innerHTML = `${(w/1000).toFixed(1).replace('.',',')}<small> L</small>`;
+  $('hSteps').textContent = fmt(st);
+  $('hProt').innerHTML = `${fmt(macroSum(k,'p'))}<small> g</small>`;
   bar('sKcalBar',kc,tgt); bar('sWaterBar',w,data.goal); bar('sStepsBar',st,data.stepsGoal);
   $('sKcal').textContent = `${fmt(kc)} / ${fmt(tgt)} kcal`;
   [['p','sP'],['c','sC'],['f','sF']].forEach(([m,id]) => { const v = macroSum(k,m); bar(id+'Bar',v,mg[m]); $(id).textContent = `${fmt(v)} / ${fmt(mg[m])} g`; });
@@ -660,6 +706,8 @@ function renderWaterHist() {
       <div class="mday-body">${rows}<p class="note">Média dos dias com registo. ✓ = objetivo cumprido.</p></div></details>`;
   }).join('');
 }
+
+$('hAddMeal').onclick = () => document.querySelector('nav [data-tab="comida"]').click();
 
 /* ---------- cópia de segurança ---------- */
 $('export').onclick = async () => {
